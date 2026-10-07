@@ -1,10 +1,42 @@
 # Doctor Tracker Frontend
 
+## Description
+
 Doctor Tracker is a responsive administrative workspace for doctors, patients, and care analytics. This independent Next.js frontend connects to the standalone Express API; records and login sessions live in MongoDB.
 
-## Local setup
+## Technology stack
 
-Use Node.js 24 LTS and npm. Run these commands from this frontend repository:
+| Layer             | Implementation                                                           |
+| ----------------- | ------------------------------------------------------------------------ |
+| Frontend          | Next.js 16 App Router, React 19, TypeScript                              |
+| UI                | Custom CSS, reusable React components, Lucide icons, native SVG charts   |
+| State and data    | React external-store subscriptions, shared API cache, URL-backed filters |
+| Companion backend | Standalone Node.js/Express REST API, TypeScript, Mongoose, MongoDB       |
+| Authentication    | Server-verified administrator session with an HTTP-only cookie           |
+| Tooling           | ESLint, TypeScript, Prettier, Node test runner with tsx                  |
+
+The assessment specifies a separate Next.js client and standalone Node.js/Express server. Each folder has its own package manifest, environment example, README, Git history, and deployment instructions.
+
+## Assessment requirements and implementation
+
+| Assessment area                     | Frontend implementation                                                                                                                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Authentication and protected portal | Login page, administrator lookup, session verification before data views render, and sign-out on protected API HTTP 401; the backend enforces access to records.                     |
+| Doctor creation and management      | Name, specialization, hospital, phone, and email form; searchable directory, specialization/hospital/date filters, sorting, pagination, profile editing.                             |
+| Corresponding patients              | Doctor profile with assigned patients; add, edit, reassign, and confirm deletion.                                                                                                    |
+| Dedicated patient page              | Global patient list, name/contact/doctor search, condition/doctor/date filters, sorting, pagination, editing and deletion.                                                           |
+| Dashboard and visualization         | Total doctors/patients, monthly additions, average workload, top-five doctor bars, condition donut, six-interval growth chart over 30/90 days, and recent patients.                  |
+| UI/UX and navigation                | Dashboard/Doctors/Patients navigation, responsive sidebar, scrollable tables, loading/empty/error states, retry actions, debounced search, native dialogs and success notifications. |
+| Performance and maintainability     | Reusable components, server pagination, shared request deduplication, stale-response protection, URL filters and cache invalidation after writes.                                    |
+| Additional testing tools            | Settings for confirmed reset and configurable sample batches; separate API documentation sidebar link.                                                                               |
+
+No third-party chart library is required by the assessment; charts use accessible SVG roles, descriptions and point titles. Their values come from backend aggregation responses, rather than independently calculated browser totals.
+
+## Setup guide
+
+1. Install Node.js 24 LTS and npm, and clone this frontend repository.
+2. Start the separately configured backend and MongoDB using the backend README.
+3. From this frontend repository, install dependencies, copy the included [environment example](.env.example), and start the development server:
 
 ```powershell
 npm.cmd ci
@@ -12,7 +44,9 @@ Copy-Item .env.example .env.local
 npm.cmd run dev
 ```
 
-Open http://localhost:3000. Keep the backend running at http://localhost:5000 with local MongoDB available. In the backend repository, follow its README to configure MongoDB, run `npm.cmd run seed`, and start `npm.cmd run dev`. No sibling directory or parent package is needed to install or build either repository independently.
+4. Open [Doctor Tracker](http://localhost:3000) and sign in with the seeded account below.
+
+Keep the backend running at http://localhost:5000 with local MongoDB available. In the backend repository, follow its README to configure MongoDB, run `npm.cmd run seed`, and start `npm.cmd run dev`. No sibling directory or parent package is needed to install or build either repository independently.
 
 ## Seeded development account
 
@@ -43,7 +77,7 @@ The backend must allow the exact frontend origin via `FRONTEND_URL=http://localh
 
 Inspect and try the endpoints at [Swagger UI](http://localhost:5000/docs/) or import [OpenAPI JSON](http://localhost:5000/openapi.json) into Postman or Bruno.
 
-## Architecture
+## System architecture
 
 Browser → independent Next.js frontend → standalone Express REST API → MongoDB.
 
@@ -60,6 +94,20 @@ The protected layout waits for session verification before rendering data views.
 
 Tables use server pagination rather than downloading all patients. Doctor assignment selectors fetch successive bounded pages so doctors beyond the first 50 remain selectable. There is no client-side fallback to fictional records when the API fails.
 
+## Technical decisions
+
+### 1. Shared API resources with React external-store subscriptions
+
+List pages, the sidebar count and forms need to observe consistent data after a write. A shared resource cache keyed by API path deduplicates in-flight requests, while `useSyncExternalStore` subscribes each view to its resource state. Feature components own only UI state such as the open modal; the backend owns records, validation, list results and totals. Authentication is a separate store verified through `/auth/me`.
+
+Each resource exposes loading, error, data and retry state. Successful writes invalidate the cache and reload active resources; logout and session expiry clear cached records without issuing more protected requests. An aborted or superseded request cannot overwrite the newer response. This handles the current portal without introducing Redux or a third-party query client. The tradeoffs are a small custom cache to maintain, broad invalidation after writes and no automatic background polling or offline persistence. A larger application could adopt a query library with cache eviction and more selective invalidation.
+
+### 2. URL-backed queries with server-owned pagination and analytics
+
+Search, filter, sorting and pagination values live in the URL, so navigation and refresh preserve the list being viewed. A 300 ms search debounce limits request churn; the request mapper converts UI keys such as `size`, `sort` and `doctor` into the backend's `limit`, `sortBy/sortOrder` and `doctorId`. Tables render one server page instead of downloading all patients. Shared form/table/modal components keep behavior consistent across global and doctor-specific patient views.
+
+The dashboard consumes server totals, condition counts, top doctor groups and zero-filled UTC daily counts. Its six chart intervals are presentation grouping of that response, keeping statistics consistent with MongoDB after edits. Doctor selectors are an intentional exception to table pagination: they fetch bounded pages until every doctor is available for assignment. This is suitable for the assessment dataset; at much larger doctor counts, a remote searchable selector would avoid loading the complete directory. Offset pagination is similarly simple for this dataset but would need cursor pagination for larger collections.
+
 ## Scripts and verification
 
 - `npm.cmd run lint`: ESLint.
@@ -71,17 +119,33 @@ Tables use server pagination rather than downloading all patients. Doctor assign
 
 Backend integration tests verify real MongoDB CRUD, authentication, analytics, filters, pagination, and security using their own temporary local database. Frontend tests mock HTTP transport and do not alter the application database. Browser visual verification remains outstanding because the app's browser automation URL policy rejected access to the local preview.
 
+## Visual evidence
+
+The assessment requires high-quality desktop and mobile screenshots. **Pending: verified screenshots have not yet been captured.** Browser automation access to the local preview was rejected in the implementation environment.
+
+| Evidence to capture                   | What it should show                                                | Suggested repository path                                                       |
+| ------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| Desktop dashboard                     | Totals, growth/conditions charts, doctor workload, recent patients | `docs/screenshots/dashboard-desktop.png`                                        |
+| Desktop doctor and patient management | Filters, pagination, doctor profile and assigned patients          | `docs/screenshots/doctors-desktop.png`, `docs/screenshots/patients-desktop.png` |
+| Mobile portal                         | Open navigation, readable dashboard, usable patient table and form | `docs/screenshots/dashboard-mobile.png`, `docs/screenshots/patients-mobile.png` |
+
+After capturing and reviewing the real UI, add the files to this repository and embed them here. Keep screenshots free of database credentials and session cookies; seeded fictional data is appropriate for submission evidence.
+
 ## Independent deployment
 
 Deploy this repository to a Next.js host such as Vercel. Set `NEXT_PUBLIC_API_URL` to the hosted backend API URL before building and configure the backend's `FRONTEND_URL` with the exact live frontend origin. The build uses only this repository's files.
 
 The backend uses Secure cookies in production. Prefer a same-site frontend/backend domain arrangement or frontend proxy. Direct cross-site cookies require HTTPS and backend `COOKIE_SAME_SITE=none`, and browser third-party-cookie policies may still affect access. Verify the deployment topology before submission.
 
-## Submission
+## Submission checklist
 
-- Frontend GitHub repository: pending publication.
-- Live frontend website: pending deployment.
-- Backend GitHub repository and live API: pending publication and deployment.
-- Seeded development credentials: above; customize the backend account for deployment.
+| Required submission item           | Current status                                                                                     |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Frontend GitHub repository link    | Pending publication; no Git remote is configured.                                                  |
+| Backend GitHub repository link     | Pending publication in the independent backend repository.                                         |
+| Live frontend website URL          | Pending deployment; localhost is a development URL.                                                |
+| Live backend API URL               | Pending backend deployment.                                                                        |
+| Reviewer credentials               | Local seeded account above; verify the credentials of the deployed demo account before submission. |
+| Desktop and mobile visual evidence | Pending capture; see Visual evidence.                                                              |
 
-Add final URLs and desktop/mobile screenshots after deployment and visual verification.
+Before submitting, publish both repositories, deploy both applications, replace the pending rows with real links, check login/CRUD/charts on the deployed hosts, and attach verified screenshots. The repositories are prepared for independent setup; hosting and visual verification are still outstanding.
