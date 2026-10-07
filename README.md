@@ -133,7 +133,7 @@ After capturing and reviewing the real UI, add the files to this repository and 
 
 ## Independent deployment
 
-Deploy this repository to a Next.js host such as Vercel. Set `NEXT_PUBLIC_API_URL` to the hosted backend API URL before building and configure the backend's `FRONTEND_URL` with the exact live frontend origin. The build uses only this repository's files.
+The frontend is deployed on Vercel at [Doctor Tracker](https://doctor-tracker-frontend-ten.vercel.app). The production API is [hosted separately](https://doctor-tracker-backend-xi.vercel.app/docs/). Import this repository as a separate Next.js project with root directory `./` and the default Next.js output settings. Set `NEXT_PUBLIC_API_URL` to the hosted backend API URL before building and configure the backend's `FRONTEND_URL` with the exact live frontend origin. The build uses only this repository's files.
 
 The backend uses Secure cookies in production. Prefer a same-site frontend/backend domain arrangement or frontend proxy. Direct cross-site cookies require HTTPS and backend `COOKIE_SAME_SITE=none`, and browser third-party-cookie policies may still affect access. Verify the deployment topology before submission.
 
@@ -143,9 +143,9 @@ The backend uses Secure cookies in production. Prefer a same-site frontend/backe
 | ---------------------------------- | -------------------------------------------------------------------------------------------------- |
 | Frontend GitHub repository link    | [doctor-tracker-frontend](https://github.com/WorkWithAfridi/doctor-tracker-frontend)               |
 | Backend GitHub repository link     | [doctor-tracker-backend](https://github.com/WorkWithAfridi/doctor-tracker-backend)                 |
-| Live frontend website URL          | Pending deployment; localhost is a development URL.                                                |
-| Live backend API URL               | Pending backend deployment.                                                                        |
+| Live frontend website URL          | [Doctor Tracker](https://doctor-tracker-frontend-ten.vercel.app)                                   |
+| Live backend API URL               | [Production API](https://doctor-tracker-backend-xi.vercel.app/api)                                 |
 | Reviewer credentials               | Local seeded account above; verify the credentials of the deployed demo account before submission. |
 | Desktop and mobile visual evidence | Pending capture; see Visual evidence.                                                              |
 
-Before submitting, deploy both applications, replace the pending rows with real links, check login/CRUD/charts on the deployed hosts, and attach verified screenshots. The repositories are prepared for independent setup; hosting and visual verification are still outstanding.
+Both applications are deployed. Production uses `NEXT_PUBLIC_API_URL=https://doctor-tracker-backend-xi.vercel.app/api` and backend `FRONTEND_URL=https://doctor-tracker-frontend-ten.vercel.app`. Before submitting, check login/CRUD/charts on the deployed hosts and attach verified desktop/mobile screenshots.
