@@ -1,7 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
-import { Database, BookOpen, Trash2, Plus, ExternalLink } from "lucide-react";
-import { apiRequest, apiDocsUrl, apiSpecUrl } from "@/lib/api";
+import { Database, Trash2, Plus } from "lucide-react";
+import { apiRequest } from "@/lib/api";
 import { useApi, invalidateRecords } from "@/hooks/use-api";
 import { Modal } from "@/components/common/ui";
 import { RequestState } from "@/components/common/request-state";
@@ -68,7 +68,7 @@ export function SettingsPage() {
         <div>
           <span className="eyebrow">WORKSPACE PREFERENCES</span>
           <h1>Settings</h1>
-          <p>Manage your workspace data and explore the API.</p>
+          <p>Manage your workspace data.</p>
         </div>
       </div>
       {result.loading || result.error ? (
@@ -161,34 +161,6 @@ export function SettingsPage() {
           >
             Reset all records
           </button>
-        </section>
-        <section className="panel settings-card settings-api">
-          <span className="mini-icon blue">
-            <BookOpen size={21} />
-          </span>
-          <h2>API documentation</h2>
-          <p>
-            Explore endpoints, query parameters, request bodies, and response
-            schemas. Use Swagger’s “Try it out” to call the running API.
-          </p>
-          <div className="heading-actions">
-            <a
-              className="button secondary"
-              href={apiDocsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open Swagger <ExternalLink size={16} />
-            </a>
-            <a
-              className="text-link"
-              href={apiSpecUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              OpenAPI JSON <ExternalLink size={14} />
-            </a>
-          </div>
         </section>
       </div>
       {operation && (

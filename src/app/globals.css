@@ -1943,9 +1943,6 @@ h1.section-title {
 .settings-card .form-field {
   width: 100%;
 }
-.settings-api {
-  grid-column: 1 / -1;
-}
 .settings-counts {
   display: flex;
   gap: 24px;
