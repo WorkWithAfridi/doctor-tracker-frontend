@@ -111,7 +111,6 @@ export default function LoginPage() {
                 autoComplete="username"
                 placeholder="you@example.com"
                 required
-                defaultValue="admin@doctortracker.com"
               />
             </label>
             <label className="form-field">
@@ -122,7 +121,6 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
-                  defaultValue="Admin123!"
                 />
                 <button
                   type="button"
@@ -159,22 +157,6 @@ export default function LoginPage() {
               <ArrowRight size={18} />
             </button>
           </form>
-          <div className="login-demo">
-            <span className="demo-pill">
-              <span className="demo-dot" />
-              Try the demo
-            </span>
-            <p>
-              Email <strong>admin@doctortracker.com</strong>
-              <br />
-              Password <strong>Admin123!</strong>
-            </p>
-            <small>
-              Use these credentials with the seeded development database.
-              <br />
-              Sign-in uses a secure server-managed session.
-            </small>
-          </div>
           <div className="login-copyright">
             Doctor Tracker · Care operations
           </div>
