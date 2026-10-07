@@ -16,8 +16,6 @@ Doctor Tracker is a responsive administrative workspace for doctors, patients, a
 | Frontend repository       | [doctor-tracker-frontend](https://github.com/WorkWithAfridi/doctor-tracker-frontend) |
 | Backend repository        | [doctor-tracker-backend](https://github.com/WorkWithAfridi/doctor-tracker-backend)   |
 
-Use Swagger UI to browse and test the live backend. The API base URL is `https://doctor-tracker-backend-xi.vercel.app/api`; it is a configuration prefix, not a standalone endpoint. Opening `/api` directly returns HTTP 404 because no index route is defined. Actual endpoints include `/api/auth/login` and `/api/doctors`; protected endpoints require authentication.
-
 Login credentials are supplied privately to authorized reviewers and are not included in this documentation.
 
 ## Technology stack
