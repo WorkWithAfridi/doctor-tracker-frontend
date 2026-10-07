@@ -141,11 +141,11 @@ The backend uses Secure cookies in production. Prefer a same-site frontend/backe
 
 | Required submission item           | Current status                                                                                     |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Frontend GitHub repository link    | Pending publication; no Git remote is configured.                                                  |
-| Backend GitHub repository link     | Pending publication in the independent backend repository.                                         |
+| Frontend GitHub repository link    | [doctor-tracker-frontend](https://github.com/WorkWithAfridi/doctor-tracker-frontend)               |
+| Backend GitHub repository link     | [doctor-tracker-backend](https://github.com/WorkWithAfridi/doctor-tracker-backend)                 |
 | Live frontend website URL          | Pending deployment; localhost is a development URL.                                                |
 | Live backend API URL               | Pending backend deployment.                                                                        |
 | Reviewer credentials               | Local seeded account above; verify the credentials of the deployed demo account before submission. |
 | Desktop and mobile visual evidence | Pending capture; see Visual evidence.                                                              |
 
-Before submitting, publish both repositories, deploy both applications, replace the pending rows with real links, check login/CRUD/charts on the deployed hosts, and attach verified screenshots. The repositories are prepared for independent setup; hosting and visual verification are still outstanding.
+Before submitting, deploy both applications, replace the pending rows with real links, check login/CRUD/charts on the deployed hosts, and attach verified screenshots. The repositories are prepared for independent setup; hosting and visual verification are still outstanding.
