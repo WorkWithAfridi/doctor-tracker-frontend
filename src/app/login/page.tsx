@@ -11,27 +11,33 @@ import {
   UsersRound,
   ChartNoAxesCombined,
 } from "lucide-react";
-import { demoActions, useDemo } from "@/services/demo-store";
+import { authActions, useAuth } from "@/services/auth-store";
 
 export default function LoginPage() {
-  const { ready, authenticated } = useDemo();
+  const { ready, authenticated, error: sessionError, retry } = useAuth();
   const router = useRouter();
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   useEffect(() => {
     if (ready && authenticated) router.replace("/dashboard");
   }, [ready, authenticated, router]);
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    if (pending) return;
+    setPending(true);
+    setError("");
     try {
-      demoActions.login(
+      await authActions.login(
         String(data.get("email")),
         String(data.get("password")),
       );
       router.replace("/dashboard");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Unable to sign in.");
+    } finally {
+      setPending(false);
     }
   }
   return (
@@ -128,13 +134,29 @@ export default function LoginPage() {
                 </button>
               </div>
             </label>
+            {sessionError && (
+              <p className="form-error" role="alert">
+                {sessionError}{" "}
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={() => void retry()}
+                >
+                  Retry connection
+                </button>
+              </p>
+            )}
             {error && (
               <p className="form-error" role="alert">
                 {error}
               </p>
             )}
-            <button className="button primary login-submit" disabled={!ready}>
-              Sign in to workspace <ArrowRight size={18} />
+            <button
+              className="button primary login-submit"
+              disabled={!ready || pending}
+            >
+              {pending ? "Signing in…" : "Sign in to workspace"}{" "}
+              <ArrowRight size={18} />
             </button>
           </form>
           <div className="login-demo">
@@ -148,9 +170,9 @@ export default function LoginPage() {
               Password <strong>Admin123!</strong>
             </p>
             <small>
-              This is a frontend demo. Use fictional data only.
+              Use these credentials with the seeded development database.
               <br />
-              Demo sign-in is not production authentication.
+              Sign-in uses a secure server-managed session.
             </small>
           </div>
           <div className="login-copyright">

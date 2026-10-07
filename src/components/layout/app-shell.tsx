@@ -10,13 +10,13 @@ import {
   LogOut,
   Menu,
   X,
-  RotateCcw,
-  ArrowUpRight,
   CheckCircle2,
   ChevronRight,
 } from "lucide-react";
-import { demoActions, useDemo } from "@/services/demo-store";
-import { Modal } from "@/components/common/ui";
+import { authActions, useAuth } from "@/services/auth-store";
+import { useApi } from "@/hooks/use-api";
+import type { DashboardData } from "@/types/domain";
+import { RequestState } from "@/components/common/request-state";
 
 const navigation = [
   { href: "/dashboard", title: "Overview", icon: LayoutDashboard },
@@ -24,20 +24,22 @@ const navigation = [
   { href: "/patients", title: "Patients", icon: UsersRound },
 ];
 export function AppShell({ children }: { children: ReactNode }) {
-  const state = useDemo();
+  const state = useAuth();
   const router = useRouter();
   const path = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [resetOpen, setResetOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
   const [notice, setNotice] = useState("");
   const sidebarRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (state.ready && !state.authenticated) router.replace("/login");
-  }, [state.ready, state.authenticated, router]);
+    if (state.ready && !state.authenticated && !state.error)
+      router.replace("/login");
+  }, [state.ready, state.authenticated, state.error, router]);
   useEffect(() => {
     const receive = (event: Event) =>
       setNotice((event as CustomEvent<string>).detail);
-    window.addEventListener("demo-notice", receive);
+    window.addEventListener("workspace-notice", receive);
     return () => window.removeEventListener("demo-notice", receive);
   }, []);
   useEffect(() => {
@@ -79,6 +81,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       previousFocus?.focus();
     };
   }, [menuOpen]);
+  if (state.error)
+    return (
+      <RequestState
+        loading={false}
+        error={state.error}
+        retry={() => void state.retry()}
+      />
+    );
   if (!state.ready || !state.authenticated)
     return (
       <div className="boot-state">
@@ -139,44 +149,48 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <Icon size={19} />
               {title}
-              {title === "Patients" && (
-                <span className="nav-count">{state.patients.length}</span>
-              )}
+              {title === "Patients" && <PatientCount />}
             </Link>
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="demo-card">
-            <span className="demo-dot" />
-            Demo workspace
-            <p>
-              A little room to explore.
-              <br />
-              All records are fictional.
-            </p>
-            <button
-              onClick={() => {
-                setResetOpen(true);
-                setMenuOpen(false);
-              }}
-            >
-              Reset demo data <RotateCcw size={13} />
-            </button>
-          </div>
           <button
             className="logout"
-            onClick={() => {
-              demoActions.logout();
-              router.replace("/login");
+            disabled={loggingOut}
+            onClick={async () => {
+              setLoggingOut(true);
+              setLogoutError("");
+              try {
+                await authActions.logout();
+                router.replace("/login");
+              } catch (error) {
+                setLogoutError(
+                  error instanceof Error ? error.message : "Unable to log out.",
+                );
+              } finally {
+                setLoggingOut(false);
+              }
             }}
           >
             <LogOut size={18} />
             Log out
           </button>
+          {logoutError && (
+            <p className="form-error" role="alert">
+              {logoutError}
+            </p>
+          )}
           <div className="sidebar-user">
-            <span className="avatar mint">AK</span>
+            <span className="avatar mint">
+              {state.user?.name
+                .split(" ")
+                .map((part) => part[0])
+                .slice(0, 2)
+                .join("")}
+            </span>
             <div>
-              Alex Kim<small>Administrator</small>
+              {state.user?.name}
+              <small>Administrator</small>
             </div>
             <span className="online-dot" />
           </div>
@@ -201,26 +215,24 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="topbar-right">
             <span className="demo-pill">
               <span className="demo-dot" />
-              Demo mode
+              Connected workspace
             </span>
-            <span className="topbar-avatar avatar mint">AK</span>
+            <span className="topbar-avatar avatar mint">
+              {state.user?.name
+                .split(" ")
+                .map((part) => part[0])
+                .slice(0, 2)
+                .join("")}
+            </span>
           </div>
         </header>
         <main className="page-content">
-          {state.storageError && (
-            <div className="storage-warning" role="status">
-              Browser storage is unavailable. Changes will last for this visit
-              only.
-            </div>
-          )}
           {children}
           <footer className="page-footer">
             <span>
               Doctor Tracker <span>·</span> Thoughtful care, organized.
             </span>
-            <span>
-              Frontend preview <ArrowUpRight size={12} />
-            </span>
+            <span>Care workspace</span>
           </footer>
         </main>
       </div>
@@ -236,32 +248,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
       )}
-      {resetOpen && (
-        <Modal
-          title="Reset demo data?"
-          description="Your changes will be replaced with the original fictional doctors and patients. You will stay signed in."
-          onClose={() => setResetOpen(false)}
-        >
-          <div className="modal-footer">
-            <button
-              className="button secondary"
-              onClick={() => setResetOpen(false)}
-            >
-              Keep my changes
-            </button>
-            <button
-              className="button primary"
-              onClick={() => {
-                demoActions.reset();
-                setResetOpen(false);
-                setNotice("Demo data restored");
-              }}
-            >
-              Reset data
-            </button>
-          </div>
-        </Modal>
-      )}
     </div>
   );
+}
+
+function PatientCount() {
+  const { data } = useApi<{ data: DashboardData }>(
+    "/analytics/dashboard?days=30",
+  );
+  return data ? (
+    <span className="nav-count">{data.data.totals.patients}</span>
+  ) : null;
 }
