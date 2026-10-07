@@ -1,9 +1,9 @@
-const apiUrl = (
+const backendUrl = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api"
 ).replace(/\/$/, "");
 const unauthorizedListeners = new Set<() => void>();
-export const apiDocsUrl = apiUrl.replace(/\/api$/, "") + "/docs/";
-export const apiSpecUrl = apiUrl.replace(/\/api$/, "") + "/openapi.json";
+export const apiDocsUrl = backendUrl.replace(/\/api$/, "") + "/docs/";
+export const apiSpecUrl = backendUrl.replace(/\/api$/, "") + "/openapi.json";
 export function onUnauthorized(listener: () => void) {
   unauthorizedListeners.add(listener);
   return () => {
@@ -29,7 +29,9 @@ export async function apiRequest<T>(
   if (options?.body && !headers.has("Content-Type"))
     headers.set("Content-Type", "application/json");
   try {
-    response = await fetch(`${apiUrl}${path}`, {
+    // Next.js forwards this same-origin request to the standalone backend.
+    // The browser keeps the HTTP-only session cookie on the frontend origin.
+    response = await fetch(`/api${path}`, {
       ...options,
       credentials: "include",
       cache: "no-store",

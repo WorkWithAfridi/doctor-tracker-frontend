@@ -20,7 +20,7 @@ test("requests include cookies, decode responses, and preserve cancellation", as
     body: JSON.stringify({ email: "admin@example.com", password: "secret" }),
   });
   assert.equal(result.data.id, "record");
-  assert.equal(calls[0].url, "http://localhost:5000/api/auth/login");
+  assert.equal(calls[0].url, "/api/auth/login");
   assert.equal(calls[0].options?.credentials, "include");
   assert.equal(calls[0].options?.cache, "no-store");
   assert.equal(

@@ -72,7 +72,7 @@ Writes affect the connected MongoDB database and persist across browser sessions
 
 ## Environment and API documentation
 
-Set `NEXT_PUBLIC_API_URL` in `.env.local` to the backend base URL **including /api**. The local value is `http://localhost:5000/api`. This public setting must not contain database credentials or secrets. Restart the frontend after changing it; deployment values are configured before building.
+Set `NEXT_PUBLIC_API_URL` in `.env.local` to the upstream backend base URL **including /api**. Browser requests always use the frontend's own `/api` path; a Next.js rewrite forwards them to this configured backend and returns its HTTP-only cookie on the frontend origin. This avoids third-party-cookie dependence in private browsing. Swagger links still point directly to the backend. The local value is `http://localhost:5000/api`. This public setting must not contain database credentials or secrets. Restart the frontend after changing it; deployment values are configured before building.
 
 The backend must allow the exact frontend origin via `FRONTEND_URL=http://localhost:3000`. Use localhost consistently when opening the frontend. Requests include cookies and browsers supply the Origin header required for writes. The frontend does not access MongoDB directly.
 
@@ -80,7 +80,7 @@ Inspect and try the endpoints at [Swagger UI](http://localhost:5000/docs/) or im
 
 ## System architecture
 
-Browser → independent Next.js frontend → standalone Express REST API → MongoDB.
+Browser → same-origin Next.js `/api` proxy → standalone Express REST API → MongoDB.
 
 - `src/lib/api.ts`: credentialed requests, structured API errors, and expired-session notifications.
 - `src/services/auth-store.ts`: server-verified administrator/staff account and login/logout/password-change state.
@@ -142,7 +142,7 @@ Administrators can add staff on the same page and view the paginated workspace u
 
 The frontend is deployed on Vercel at [Doctor Tracker](https://doctor-tracker-frontend-ten.vercel.app). The production API is [hosted separately](https://doctor-tracker-backend-xi.vercel.app/docs/). Import this repository as a separate Next.js project with root directory `./` and the default Next.js output settings. Set `NEXT_PUBLIC_API_URL` to the hosted backend API URL before building and configure the backend's `FRONTEND_URL` with the exact live frontend origin. The build uses only this repository's files.
 
-The backend uses Secure cookies in production. Prefer a same-site frontend/backend domain arrangement or frontend proxy. Direct cross-site cookies require HTTPS and backend `COOKIE_SAME_SITE=none`, and browser third-party-cookie policies may still affect access. Verify the deployment topology before submission.
+The backend uses Secure cookies in production. The frontend proxies `/api` requests through its own origin, so browser sessions use first-party HTTP-only cookies even though the Express API has a separate deployment. The backend still verifies the original frontend Origin on writes. Swagger uses its own backend-origin session; signing into the portal does not sign into Swagger.
 
 ## Submission checklist
 
