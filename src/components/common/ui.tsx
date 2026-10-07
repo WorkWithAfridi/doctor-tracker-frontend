@@ -191,7 +191,10 @@ export function Modal({
       className="modal"
       aria-labelledby="modal-title"
       aria-describedby={description ? "modal-description" : undefined}
-      onCancel={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           const bounds = event.currentTarget.getBoundingClientRect();

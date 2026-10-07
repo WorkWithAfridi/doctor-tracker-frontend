@@ -8,9 +8,17 @@ import {
   SlidersHorizontal,
   UsersRound,
 } from "lucide-react";
-import { useDemo } from "@/services/demo-store";
-import { conditions, type Patient } from "@/types/domain";
-import { useListFilters, matchesDate } from "@/hooks/use-list-filters";
+import { useApi } from "@/hooks/use-api";
+import { listQuery } from "@/services/records";
+import { RequestState } from "@/components/common/request-state";
+import {
+  conditions,
+  type Patient,
+  type Doctor,
+  type ListResponse,
+  type DashboardData,
+} from "@/types/domain";
+import { useListFilters, usePageCorrection } from "@/hooks/use-list-filters";
 import {
   Avatar,
   Badge,
@@ -22,39 +30,22 @@ import {
 import { PatientForm, DeletePatient } from "@/components/common/record-forms";
 
 export function PatientList({ doctorId }: { doctorId?: string }) {
-  const { doctors, patients } = useDemo();
   const filters = useListFilters();
   const [editing, setEditing] = useState<Patient | "new" | null>(null);
   const [deleting, setDeleting] = useState<Patient | null>(null);
-  const search = filters.get("search").toLowerCase().trim();
-  const doctorMap = new Map(doctors.map((doctor) => [doctor.id, doctor]));
-  const source = patients.filter(
-    (patient) => !doctorId || patient.doctorId === doctorId,
+  const result = useApi<ListResponse<Patient>>(
+    (doctorId ? `/doctors/${doctorId}/patients?` : "/patients?") +
+      listQuery(filters.params, filters.page, filters.size, "patients"),
   );
-  const filtered = source
-    .filter(
-      (patient) =>
-        `${patient.firstName} ${patient.lastName} ${patient.email} ${patient.phone} ${doctorMap.get(patient.doctorId)?.name}`
-          .toLowerCase()
-          .includes(search) &&
-        (!filters.get("condition") ||
-          patient.condition === filters.get("condition")) &&
-        (!filters.get("doctor") ||
-          patient.doctorId === filters.get("doctor")) &&
-        matchesDate(patient.createdAt, filters.get("from"), filters.get("to")),
-    )
-    .sort((a, b) =>
-      filters.get("sort") === "name"
-        ? `${a.firstName} ${a.lastName}`.localeCompare(
-            `${b.firstName} ${b.lastName}`,
-          )
-        : b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id),
-    );
-  const page = Math.min(
-    filters.page,
-    Math.max(1, Math.ceil(filtered.length / filters.size)),
+  usePageCorrection(result.data?.pagination);
+  const directory = useApi<Doctor[]>("doctor-directory");
+  const summary = useApi<{ data: DashboardData }>(
+    "/analytics/dashboard?days=30",
   );
-  const rows = filtered.slice((page - 1) * filters.size, page * filters.size);
+  const doctors = directory.data ?? [];
+  const rows = result.data?.data ?? [];
+  const total = result.data?.pagination.total ?? 0;
+  const page = result.data?.pagination.page ?? filters.page;
   return (
     <>
       <div className={doctorId ? "section-heading" : "page-heading"}>
@@ -62,7 +53,7 @@ export function PatientList({ doctorId }: { doctorId?: string }) {
           {!doctorId && <span className="eyebrow">YOUR PATIENT NETWORK</span>}
           <h1 className={doctorId ? "section-title" : ""}>
             {doctorId ? "Assigned patients" : "Patients"}
-            <span className="count-chip">{source.length}</span>
+            <span className="count-chip">{total}</span>
           </h1>
           <p>
             {doctorId
@@ -86,7 +77,8 @@ export function PatientList({ doctorId }: { doctorId?: string }) {
               <UsersRound size={18} />
             </span>
             <span>
-              All patients<strong>{patients.length}</strong>
+              All patients
+              <strong>{summary.data?.data.totals.patients ?? "…"}</strong>
             </span>
           </div>
           {conditions.slice(0, 3).map((condition) => (
@@ -97,23 +89,23 @@ export function PatientList({ doctorId }: { doctorId?: string }) {
               <span>
                 {condition}
                 <strong>
-                  {
-                    patients.filter(
-                      (patient) => patient.condition === condition,
-                    ).length
-                  }
+                  {summary.data?.data.conditionDistribution.find(
+                    (item) => item.condition === condition,
+                  )?.count ?? "…"}
                 </strong>
               </span>
             </div>
           ))}
         </div>
       )}
+      {directory.error && <RequestState {...directory} />}
+      {summary.error && !doctorId && <RequestState {...summary} />}
       <section className="panel list-panel">
         <div className="panel-title">
           <div>
             <h2>{doctorId ? "Patient directory" : "All patients"}</h2>
             <span>
-              {filtered.length} {filtered.length === 1 ? "record" : "records"}
+              {total} {total === 1 ? "record" : "records"}
               {filters.active ? " matching your filters" : " in your workspace"}
             </span>
           </div>
@@ -190,7 +182,9 @@ export function PatientList({ doctorId }: { doctorId?: string }) {
             </button>
           )}
         </div>
-        {rows.length ? (
+        {result.loading || result.error ? (
+          <RequestState {...result} />
+        ) : rows.length ? (
           <div className="table-scroll">
             <table>
               <thead>
@@ -228,11 +222,8 @@ export function PatientList({ doctorId }: { doctorId?: string }) {
                           className="doctor-link"
                           href={`/doctors/${patient.doctorId}`}
                         >
-                          {doctorMap.get(patient.doctorId)?.name ??
-                            "Unassigned"}
-                          <small>
-                            {doctorMap.get(patient.doctorId)?.specialization}
-                          </small>
+                          {patient.doctor?.name ?? "Unassigned"}
+                          <small>{patient.doctor?.specialization}</small>
                         </Link>
                       </td>
                     )}
@@ -283,13 +274,15 @@ export function PatientList({ doctorId }: { doctorId?: string }) {
             </button>
           </EmptyState>
         )}
-        <Pagination
-          page={page}
-          total={filtered.length}
-          size={filters.size}
-          onPage={(value) => filters.update("page", String(value))}
-          onSize={(value) => filters.update("size", String(value))}
-        />
+        {result.data && (
+          <Pagination
+            page={page}
+            total={total}
+            size={filters.size}
+            onPage={(value) => filters.update("page", String(value))}
+            onSize={(value) => filters.update("size", String(value))}
+          />
+        )}
       </section>
       {editing && (
         <PatientForm

@@ -66,8 +66,3 @@ export interface DashboardData {
   }[];
   period: { days: number; timezone: "UTC"; from: string; to: string };
 }
-
-export interface DemoData {
-  doctors: Doctor[];
-  patients: Patient[];
-}

@@ -2,9 +2,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Plus, Pencil, ArrowUpRight, SlidersHorizontal } from "lucide-react";
-import { useDemo } from "@/services/demo-store";
-import type { Doctor } from "@/types/domain";
-import { useListFilters, matchesDate } from "@/hooks/use-list-filters";
+import { useApi } from "@/hooks/use-api";
+import { listQuery } from "@/services/records";
+import { RequestState } from "@/components/common/request-state";
+import type { Doctor, DoctorOptions, ListResponse } from "@/types/domain";
+import { useListFilters, usePageCorrection } from "@/hooks/use-list-filters";
 import {
   Avatar,
   EmptyState,
@@ -15,43 +17,26 @@ import {
 import { DoctorForm } from "@/components/common/record-forms";
 
 export function DoctorList() {
-  const { doctors, patients } = useDemo();
   const filters = useListFilters();
   const [editing, setEditing] = useState<Doctor | "new" | null>(null);
-  const search = filters.get("search").toLowerCase().trim();
-  const counts = new Map<string, number>();
-  patients.forEach((patient) =>
-    counts.set(patient.doctorId, (counts.get(patient.doctorId) ?? 0) + 1),
+  const result = useApi<ListResponse<Doctor>>(
+    "/doctors?" +
+      listQuery(filters.params, filters.page, filters.size, "doctors"),
   );
-  const filtered = doctors
-    .filter(
-      (doctor) =>
-        `${doctor.name} ${doctor.email} ${doctor.specialization} ${doctor.hospital}`
-          .toLowerCase()
-          .includes(search) &&
-        (!filters.get("specialization") ||
-          doctor.specialization === filters.get("specialization")) &&
-        (!filters.get("hospital") ||
-          doctor.hospital === filters.get("hospital")) &&
-        matchesDate(doctor.createdAt, filters.get("from"), filters.get("to")),
-    )
-    .sort((a, b) =>
-      filters.get("sort") === "name"
-        ? a.name.localeCompare(b.name)
-        : b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id),
-    );
-  const page = Math.min(
-    filters.page,
-    Math.max(1, Math.ceil(filtered.length / filters.size)),
-  );
-  const rows = filtered.slice((page - 1) * filters.size, page * filters.size);
+  usePageCorrection(result.data?.pagination);
+  const options = useApi<{ data: DoctorOptions }>("/doctors/options");
+  const rows = result.data?.data ?? [];
+  const total = result.data?.pagination.total ?? 0;
+  const page = result.data?.pagination.page ?? filters.page;
+  const specializations = options.data?.data.specializations ?? [];
+  const hospitals = options.data?.data.hospitals ?? [];
   return (
     <>
       <div className="page-heading">
         <div>
           <span className="eyebrow">THE PEOPLE BEHIND THE CARE</span>
           <h1>
-            Doctors <span className="count-chip">{doctors.length}</span>
+            Doctors <span className="count-chip">{total}</span>
           </h1>
           <p>Your care team, all in one place.</p>
         </div>
@@ -62,17 +47,15 @@ export function DoctorList() {
       </div>
       <div className="directory-banner">
         <div className="banner-avatars">
-          {doctors.slice(0, 4).map((doctor) => (
+          {rows.slice(0, 4).map((doctor) => (
             <Avatar key={doctor.id} name={doctor.name} />
           ))}
         </div>
         <div>
           <strong>A connected team. A stronger care network.</strong>
           <p>
-            {doctors.length} doctors across{" "}
-            {new Set(doctors.map((doctor) => doctor.specialization)).size}{" "}
-            specialties and{" "}
-            {new Set(doctors.map((doctor) => doctor.hospital)).size} hospitals.
+            {total} doctors across {specializations.length} specialties and{" "}
+            {hospitals.length} hospitals.
           </p>
         </div>
         <span className="banner-tag">
@@ -80,12 +63,13 @@ export function DoctorList() {
           Care team directory
         </span>
       </div>
+      {options.error && <RequestState {...options} />}
       <section className="panel list-panel">
         <div className="panel-title">
           <div>
             <h2>All doctors</h2>
             <span>
-              {filtered.length} {filtered.length === 1 ? "doctor" : "doctors"}
+              {total} {total === 1 ? "doctor" : "doctors"}
               {filters.active ? " matching your filters" : " in your workspace"}
             </span>
           </div>
@@ -115,11 +99,9 @@ export function DoctorList() {
             }
           >
             <option value="">All specializations</option>
-            {[...new Set(doctors.map((doctor) => doctor.specialization))]
-              .sort()
-              .map((value) => (
-                <option key={value}>{value}</option>
-              ))}
+            {specializations.map((value) => (
+              <option key={value}>{value}</option>
+            ))}
           </select>
           <select
             aria-label="Filter by hospital"
@@ -127,11 +109,9 @@ export function DoctorList() {
             onChange={(event) => filters.update("hospital", event.target.value)}
           >
             <option value="">All hospitals</option>
-            {[...new Set(doctors.map((doctor) => doctor.hospital))]
-              .sort()
-              .map((value) => (
-                <option key={value}>{value}</option>
-              ))}
+            {hospitals.map((value) => (
+              <option key={value}>{value}</option>
+            ))}
           </select>
           <div className="date-filters">
             <SlidersHorizontal size={15} />
@@ -162,7 +142,9 @@ export function DoctorList() {
             </button>
           )}
         </div>
-        {rows.length ? (
+        {result.loading || result.error ? (
+          <RequestState {...result} />
+        ) : rows.length ? (
           <div className="table-scroll">
             <table>
               <thead>
@@ -198,7 +180,7 @@ export function DoctorList() {
                     <td className="muted">{doctor.hospital}</td>
                     <td>
                       <span className="patient-count">
-                        {counts.get(doctor.id) ?? 0}
+                        {doctor.patientCount ?? 0}
                         <span> patients</span>
                       </span>
                     </td>
@@ -238,13 +220,15 @@ export function DoctorList() {
             </button>
           </EmptyState>
         )}
-        <Pagination
-          page={page}
-          total={filtered.length}
-          size={filters.size}
-          onPage={(value) => filters.update("page", String(value))}
-          onSize={(value) => filters.update("size", String(value))}
-        />
+        {result.data && (
+          <Pagination
+            page={page}
+            total={total}
+            size={filters.size}
+            onPage={(value) => filters.update("page", String(value))}
+            onSize={(value) => filters.update("size", String(value))}
+          />
+        )}
       </section>
       {editing && (
         <DoctorForm

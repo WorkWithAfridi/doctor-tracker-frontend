@@ -11,20 +11,23 @@ import {
   CalendarDays,
   UsersRound,
 } from "lucide-react";
-import { useDemo } from "@/services/demo-store";
+import { useApi } from "@/hooks/use-api";
+import type { Doctor } from "@/types/domain";
+import { RequestState } from "@/components/common/request-state";
 import { Avatar, EmptyState, formatDate } from "@/components/common/ui";
 import { DoctorForm } from "@/components/common/record-forms";
 import { PatientList } from "@/components/patients/patient-list";
 export function DoctorDetails() {
   const { id } = useParams<{ id: string }>();
-  const { doctors, patients } = useDemo();
+  const result = useApi<{ data: Doctor }>(`/doctors/${id}`);
   const [editing, setEditing] = useState(false);
-  const doctor = doctors.find((doctor) => doctor.id === id);
+  if (result.loading || result.error) return <RequestState {...result} />;
+  const doctor = result.data?.data;
   if (!doctor)
     return (
       <EmptyState
         title="Doctor not found"
-        description="This doctor may no longer exist in your demo workspace."
+        description="This doctor may no longer exist in your workspace."
       >
         <Link className="button primary" href="/doctors">
           Back to doctors
@@ -81,10 +84,8 @@ export function DoctorDetails() {
         </div>
         <div className="profile-bottom">
           <UsersRound size={17} />
-          <strong>
-            {patients.filter((patient) => patient.doctorId === id).length}
-          </strong>{" "}
-          patients under care<span>Part of your connected care network</span>
+          <strong>{doctor.patientCount ?? 0}</strong> patients under care
+          <span>Part of your connected care network</span>
         </div>
       </div>
       <PatientList doctorId={id} />

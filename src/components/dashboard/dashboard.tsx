@@ -11,7 +11,10 @@ import {
   UserPlus,
   HeartPulse,
 } from "lucide-react";
-import { useDemo } from "@/services/demo-store";
+import { useApi } from "@/hooks/use-api";
+import { useAuth } from "@/services/auth-store";
+import type { DashboardData, DoctorOptions } from "@/types/domain";
+import { RequestState } from "@/components/common/request-state";
 import { conditions } from "@/types/domain";
 import { localDate } from "@/hooks/use-list-filters";
 import { Avatar, Badge, EmptyState, formatDate } from "@/components/common/ui";
@@ -19,43 +22,31 @@ import { DoctorForm } from "@/components/common/record-forms";
 
 const conditionColors = ["#287968", "#86b7a8", "#e5bc73", "#d98682"];
 export function Dashboard() {
-  const { doctors, patients } = useDemo();
+  const { user } = useAuth();
   const [period, setPeriod] = useState(30);
   const [adding, setAdding] = useState(false);
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisMonth = patients.filter(
-    (patient) => new Date(patient.createdAt) >= monthStart,
-  ).length;
-  const specialties = new Set(doctors.map((doctor) => doctor.specialization))
-    .size;
-  const counts = new Map<string, number>();
-  patients.forEach((patient) =>
-    counts.set(patient.doctorId, (counts.get(patient.doctorId) ?? 0) + 1),
+  const result = useApi<{ data: DashboardData }>(
+    `/analytics/dashboard?days=${period}`,
   );
-  const topDoctors = [...doctors]
-    .sort(
-      (a, b) =>
-        (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0) ||
-        a.name.localeCompare(b.name),
-    )
-    .slice(0, 5);
-  const recent = [...patients]
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, 5);
+  const options = useApi<{ data: DoctorOptions }>("/doctors/options");
+  if (result.loading || result.error) return <RequestState {...result} />;
+  const data = result.data!.data;
+  const monthStart = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+  );
+  const thisMonth = data.totals.patientsAddedThisMonth;
+  const specialties = options.data?.data.specializations.length ?? "…";
+  const topDoctors = data.patientsPerDoctor;
+  const recent = data.recentPatients;
   const bins = Array.from({ length: 6 }, (_, index) => {
-    const start = new Date(now);
-    start.setDate(start.getDate() - period + 1 + index * (period / 6));
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + period / 6);
+    const days = data.patientGrowth.slice(
+      index * (period / 6),
+      (index + 1) * (period / 6),
+    );
     return {
-      date: start,
-      value: patients.filter(
-        (patient) =>
-          new Date(patient.createdAt) >= start &&
-          new Date(patient.createdAt) < end,
-      ).length,
+      date: new Date(days[0].date + "T00:00:00.000Z"),
+      value: days.reduce((sum, day) => sum + day.count, 0),
     };
   });
   const max = Math.max(
@@ -69,7 +60,9 @@ export function Dashboard() {
   const distribution = conditions.map((condition, index) => ({
     condition,
     color: conditionColors[index],
-    count: patients.filter((patient) => patient.condition === condition).length,
+    count:
+      data.conditionDistribution.find((item) => item.condition === condition)
+        ?.count ?? 0,
   }));
 
   return (
@@ -84,7 +77,7 @@ export function Dashboard() {
               : now.getHours() < 18
                 ? "afternoon"
                 : "evening"}
-            , Alex <span className="greeting-dot">✳</span>
+            , {user?.name.split(" ")[0]} <span className="greeting-dot">✳</span>
           </h1>
           <p>Here&apos;s what&apos;s happening across your care team.</p>
         </div>
@@ -107,14 +100,14 @@ export function Dashboard() {
         {[
           {
             label: "Total doctors",
-            value: doctors.length,
+            value: data.totals.doctors,
             icon: Stethoscope,
             detail: `Across ${specialties} specialties`,
             color: "mint",
           },
           {
             label: "Total patients",
-            value: patients.length,
+            value: data.totals.patients,
             icon: UsersRound,
             detail: "Connected to your care team",
             color: "blue",
@@ -128,9 +121,7 @@ export function Dashboard() {
           },
           {
             label: "Patients per doctor",
-            value: doctors.length
-              ? (patients.length / doctors.length).toFixed(1)
-              : "0",
+            value: data.totals.averagePatientsPerDoctor.toFixed(1),
             icon: HeartPulse,
             detail: "Average across your network",
             color: "lilac",
@@ -248,7 +239,7 @@ export function Dashboard() {
           </div>
           <div className="chart-note">
             <span className="legend-dot" />
-            New patients · {period / 6}-day intervals
+            New patients · {period / 6}-day intervals · UTC
           </div>
         </section>
         <section className="panel condition-panel">
@@ -276,14 +267,14 @@ export function Dashboard() {
                 strokeWidth="22"
               />
               {distribution.map((item, index) => {
-                const length = patients.length
-                  ? (item.count / patients.length) * 408.407
+                const length = data.totals.patients
+                  ? (item.count / data.totals.patients) * 408.407
                   : 0;
-                const current = patients.length
+                const current = data.totals.patients
                   ? (distribution
                       .slice(0, index)
                       .reduce((sum, entry) => sum + entry.count, 0) /
-                      patients.length) *
+                      data.totals.patients) *
                     408.407
                   : 0;
                 return (
@@ -306,7 +297,7 @@ export function Dashboard() {
                 );
               })}
               <text x="90" y="90" textAnchor="middle" className="donut-number">
-                {patients.length}
+                {data.totals.patients}
               </text>
               <text
                 x="90"
@@ -326,8 +317,8 @@ export function Dashboard() {
                 <label>{item.condition}</label>
                 <strong>{item.count}</strong>
                 <small>
-                  {patients.length
-                    ? Math.round((item.count / patients.length) * 100)
+                  {data.totals.patients
+                    ? Math.round((item.count / data.totals.patients) * 100)
                     : 0}
                   %
                 </small>
@@ -350,15 +341,17 @@ export function Dashboard() {
           {topDoctors.length ? (
             <div className="doctor-bars">
               {topDoctors.map((doctor) => (
-                <div key={doctor.id}>
+                <div key={doctor.doctorId}>
                   <div className="bar-label">
-                    <Link href={`/doctors/${doctor.id}`}>{doctor.name}</Link>
-                    <strong>{counts.get(doctor.id) ?? 0}</strong>
+                    <Link href={`/doctors/${doctor.doctorId}`}>
+                      {doctor.doctorName}
+                    </Link>
+                    <strong>{doctor.patientCount}</strong>
                   </div>
                   <div className="bar-track">
                     <div
                       style={{
-                        width: `${((counts.get(doctor.id) ?? 0) / Math.max(1, ...topDoctors.map((item) => counts.get(item.id) ?? 0))) * 100}%`,
+                        width: `${(doctor.patientCount / Math.max(1, ...topDoctors.map((item) => item.patientCount))) * 100}%`,
                       }}
                     />
                   </div>
@@ -395,11 +388,7 @@ export function Dashboard() {
                       {patient.firstName} {patient.lastName}
                     </strong>
                     <small>
-                      {
-                        doctors.find((doctor) => doctor.id === patient.doctorId)
-                          ?.name
-                      }{" "}
-                      ·{" "}
+                      {patient.doctor?.name ?? "Unassigned"} ·{" "}
                       {localDate(patient.createdAt) === localDate(now)
                         ? "Today"
                         : formatDate(patient.createdAt)}
