@@ -1,6 +1,10 @@
 # Doctor Tracker Frontend
 
-Doctor Tracker is a responsive administrative workspace for doctors, patients, and care analytics. This repository contains the independent Next.js frontend with fully local demo flows. Run commands from this folder:
+Doctor Tracker is a responsive administrative workspace for doctors, patients, and care analytics. This independent Next.js frontend connects to the standalone Express API; records and login sessions live in MongoDB.
+
+## Local setup
+
+Use Node.js 24 LTS and npm. Run these commands from this frontend repository:
 
 ```powershell
 npm.cmd ci
@@ -8,101 +12,74 @@ Copy-Item .env.example .env.local
 npm.cmd run dev
 ```
 
-Open http://localhost:3000. The frontend currently runs entirely on browser demo data; the backend does not need to be running.
+Open http://localhost:3000. Keep the backend running at http://localhost:5000 with local MongoDB available. In the backend repository, follow its README to configure MongoDB, run `npm.cmd run seed`, and start `npm.cmd run dev`. No sibling directory or parent package is needed to install or build either repository independently.
 
-## Demo login
+## Seeded development account
 
 - Email: `admin@doctortracker.com`
 - Password: `Admin123!`
 
-Sign-in is a frontend simulation, not a security boundary. Session state uses session storage, so refreshing retains login in the current tab. All names and records are fictional.
+The backend seed creates 24 fictional doctors and 186 fictional patients. Authentication checks the backend account and uses an HTTP-only session cookie. Refreshing the page restores the session through `GET /api/auth/me`; logout revokes it on the server. Browser demo storage is no longer used or imported. Existing browser demo records are not migrated into MongoDB.
 
-## Implemented demo flows
+## Connected flows
 
-- Overview with totals, monthly additions, patient growth over 30/90 days, condition distribution, doctor workload, and recent patients.
-- Doctor creation and editing, searchable directory, specialization/hospital/date filters, sorting, pagination, and individual doctor profiles.
-- Assigned patient lists on doctor profiles, patient creation, editing, reassignment, and confirmed deletion.
-- Global patient directory with name/contact/doctor search, condition/doctor/date filters, sorting, and pagination.
-- URL-backed filters and page state, empty states, validation feedback, toast notifications, and runtime error recovery.
-- Responsive navigation, scrollable tables, native modal dialogs, keyboard focus management, and reduced-motion support.
-- Browser persistence with 24 seeded doctors and 186 patients. Reset demo data restores the original records after confirmation.
+- Login, current administrator, logout, and redirect to login after a session expires.
+- Doctor directory and profiles, creation/editing, patient counts, and filter options.
+- Global and doctor-specific patient lists, creation/editing, reassignment, and confirmed deletion.
+- Server search, specialization/hospital/condition/doctor/date filters, name/date sorting, and pagination.
+- Database-derived dashboard totals, monthly additions, 30/90-day growth, patient conditions, top doctors, and recent patients.
+- URL-backed list filters, debounced search, loading and retry states, server field errors, and success notifications.
+- Responsive navigation, keyboard focus management, native modal dialogs, and reduced-motion support.
 
-Date filters use the record's creation date in the browser's local timezone. Dashboard figures derive from the same records and update after mutations. Demo filtering, pagination, and analytics run locally; production will move these operations to the backend API.
+Writes affect the connected MongoDB database and persist across browser sessions. The former browser-only reset control has been removed. Date filters and analytics use UTC; ordinary record timestamps are formatted for display in the browser's timezone. Daily growth counts are grouped into six chart intervals; deleted patients are excluded by the backend.
 
-If browser storage is blocked, changes remain in memory for the current visit and the UI displays a warning. Data is local to the browser; it is not written to MongoDB.
+## Environment and API documentation
 
-- `npm.cmd run lint`: ESLint.
-- `npm.cmd run typecheck`: validate TypeScript.
-- `npm.cmd test`: demo login, CRUD, relationship integrity, persistence, reset, and storage failure checks.
-- `npm.cmd run format`: format source, tests, and documentation.
-- `npm.cmd run build`: production build.
-- `npm.cmd start`: serve the production build.
+Set `NEXT_PUBLIC_API_URL` in `.env.local` to the backend base URL **including /api**. The local value is `http://localhost:5000/api`. This public setting must not contain database credentials or secrets. Restart the frontend after changing it; deployment values are configured before building.
 
-## Prerequisites and repository independence
+The backend must allow the exact frontend origin via `FRONTEND_URL=http://localhost:3000`. Use localhost consistently when opening the frontend. Requests include cookies and browsers supply the Origin header required for writes. The frontend does not access MongoDB directly.
 
-Use Node.js 24 LTS and npm. Clone this frontend repository and run the setup commands above from its root. No parent package or sibling folder is required to install or build the frontend.
-
-## Environment
-
-Set `NEXT_PUBLIC_API_URL` in `.env.local` to the backend API base URL, including `/api`. The local default is `http://localhost:5000/api`. Public frontend variables must not contain secrets. `.env.local` is ignored; `.env.example` is included in this repository.
+Inspect and try the endpoints at [Swagger UI](http://localhost:5000/docs/) or import [OpenAPI JSON](http://localhost:5000/openapi.json) into Postman or Bruno.
 
 ## Architecture
 
-Current demo: browser → frontend demo repository → localStorage (records) and sessionStorage (login).
+Browser → independent Next.js frontend → standalone Express REST API → MongoDB.
 
-Planned production: browser → Next.js frontend → standalone Express REST API → MongoDB.
+- `src/lib/api.ts`: credentialed requests, structured API errors, and expired-session notifications.
+- `src/services/auth-store.ts`: server-verified administrator and login/logout state.
+- `src/services/records.ts`: write contracts, URL-to-API query mapping, and paginated doctor assignment options.
+- `src/services/api-cache.ts`: shared request deduplication, retries, invalidation, and stale-request protection.
+- `src/hooks/use-api.ts`: React subscription to API resource state.
+- `src/hooks/use-list-filters.ts`: shareable URL filters and pagination.
+- `src/components/`: existing care workspace UI with backend records.
+- `src/types/domain.ts`: frontend entities and API response contracts.
 
-Demo data ownership is centralized in `src/services/demo-store.ts`, with typed entities in `src/types/domain.ts` and seed generation in `src/constants/demo-data.ts`. Pages subscribe to immutable snapshots through React's `useSyncExternalStore`. Components never write directly to browser storage. The existing `lib/api.ts` helper is reserved for future backend integration.
+The protected layout waits for session verification before rendering data views. The backend enforces authorization on every protected request. Successful mutations invalidate cached feature resources, refreshing visible lists, profiles, selectors, and dashboard counts. Cache data is cleared on logout/session expiry and is not persisted in browser storage. Returning to a view refreshes its resources.
 
-Production authentication, server-side validation, filtering, pagination, and analytics remain backend work. The frontend does not access MongoDB directly.
+Tables use server pagination rather than downloading all patients. Doctor assignment selectors fetch successive bounded pages so doctors beyond the first 50 remain selectable. There is no client-side fallback to fictional records when the API fails.
 
-## Source structure
+## Scripts and verification
 
-```text
-src/
-  app/
-    layout.tsx                 Root layout and metadata
-    page.tsx                   Redirect to dashboard
-    login/                     Demo login
-    (protected)/
-      dashboard/               Analytics overview
-      doctors/[id]/            Doctor directory and profiles
-      patients/                Patient directory
-  components/
-    ui/ layout/ common/
-    dashboard/ doctors/ patients/
-  hooks/                       React hooks
-  lib/api.ts                   REST request helper
-  services/                    Feature API access
-  types/                       Frontend types
-  constants/                   Shared constants
-```
+- `npm.cmd run lint`: ESLint.
+- `npm.cmd run typecheck`: TypeScript.
+- `npm.cmd test`: request credentials/errors, session-expiry notification, query mapping, nested writes/reassignment, complete doctor selectors, retries, request deduplication, stale responses, and cache clearing.
+- `npm.cmd run build`: production build.
+- `npm.cmd start`: serve the production build.
+- `npm.cmd run format`: format source, tests, and README.
 
-The protected layout checks demo session state before displaying records and redirects signed-out users to login. This client-side gate is only for the demo.
-
-## Technical decisions
-
-1. **Central demo repository:** Shared records and mutations live outside page components. Doctor counts, assigned patient lists, and dashboard analytics all observe the same snapshot, preventing views from becoming inconsistent after an edit. This provides a clear boundary for future API integration without introducing Redux for a small local demo.
-2. **Referenced patients:** Each patient stores a `doctorId`; patient arrays are not embedded inside doctors. This supports global lists, reassignment, independent patient edits, and doctor-specific views using the same typed records.
-3. **URL-backed lists:** Search, filters, sorting, and pagination survive refreshes and are represented in shareable URLs. Native SVG charts avoid a chart dependency for this small demo and expose text summaries and point titles.
+Backend integration tests verify real MongoDB CRUD, authentication, analytics, filters, pagination, and security using their own temporary local database. Frontend tests mock HTTP transport and do not alter the application database. Browser visual verification remains outstanding because the app's browser automation URL policy rejected access to the local preview.
 
 ## Independent deployment
 
-Deploy this repository to Vercel or another Next.js-compatible host. Configure `NEXT_PUBLIC_API_URL` with the hosted backend API URL before building. Configure the backend's `FRONTEND_URL` to allow the exact live frontend origin. Authentication topology will be finalized when login is implemented.
+Deploy this repository to a Next.js host such as Vercel. Set `NEXT_PUBLIC_API_URL` to the hosted backend API URL before building and configure the backend's `FRONTEND_URL` with the exact live frontend origin. The build uses only this repository's files.
 
-The frontend build and deployment use only files from this repository.
+The backend uses Secure cookies in production. Prefer a same-site frontend/backend domain arrangement or frontend proxy. Direct cross-site cookies require HTTPS and backend `COOKIE_SAME_SITE=none`, and browser third-party-cookie policies may still affect access. Verify the deployment topology before submission.
 
-## Submission links
+## Submission
 
 - Frontend GitHub repository: pending publication.
 - Live frontend website: pending deployment.
-- Companion backend repository and API URL: pending publication and deployment.
-- Demo credentials: listed above; production authentication is pending.
+- Backend GitHub repository and live API: pending publication and deployment.
+- Seeded development credentials: above; customize the backend account for deployment.
 
-## Dependency audit
-
-At scaffold creation, production dependencies passed `npm audit --omit=dev`. Development tooling reported five high-severity findings stemming from `braces` through the Next.js ESLint plugin. No patched `braces` release was available during that check; npm suggested an incompatible major downgrade of the Next.js ESLint configuration. Recheck before submission.
-
-## Documentation to complete
-
-Add desktop/mobile screenshots after visual QA and final repository/deployment URLs after publishing. Browser visual checks were unavailable in the implementation run because the app's browser automation URL policy rejected access to the local preview.
+Add final URLs and desktop/mobile screenshots after deployment and visual verification.
