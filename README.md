@@ -4,6 +4,22 @@
 
 Doctor Tracker is a responsive administrative workspace for doctors, patients, and care analytics. This independent Next.js frontend connects to the standalone Express API; records and login sessions live in MongoDB.
 
+## Live links
+
+| Resource                  | URL                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------ |
+| Frontend application      | [Doctor Tracker](https://doctor-tracker-frontend-ten.vercel.app)                     |
+| Frontend login            | [Sign in](https://doctor-tracker-frontend-ten.vercel.app/login)                      |
+| Backend API documentation | [Swagger UI](https://doctor-tracker-backend-xi.vercel.app/docs/)                     |
+| Backend health check      | [Health](https://doctor-tracker-backend-xi.vercel.app/health)                        |
+| OpenAPI specification     | [OpenAPI JSON](https://doctor-tracker-backend-xi.vercel.app/openapi.json)            |
+| Frontend repository       | [doctor-tracker-frontend](https://github.com/WorkWithAfridi/doctor-tracker-frontend) |
+| Backend repository        | [doctor-tracker-backend](https://github.com/WorkWithAfridi/doctor-tracker-backend)   |
+
+Use Swagger UI to browse and test the live backend. The API base URL is `https://doctor-tracker-backend-xi.vercel.app/api`; it is a configuration prefix, not a standalone endpoint. Opening `/api` directly returns HTTP 404 because no index route is defined. Actual endpoints include `/api/auth/login` and `/api/doctors`; protected endpoints require authentication.
+
+Login credentials are supplied privately to authorized reviewers and are not included in this documentation.
+
 ## Technology stack
 
 | Layer             | Implementation                                                           |
@@ -44,14 +60,13 @@ Copy-Item .env.example .env.local
 npm.cmd run dev
 ```
 
-4. Open [Doctor Tracker](http://localhost:3000) and sign in with the seeded account below.
+4. Open [Doctor Tracker](http://localhost:3000) and sign in with the administrator account configured when seeding your backend.
 
 Keep the backend running at http://localhost:5000 with local MongoDB available. In the backend repository, follow its README to configure MongoDB, run `npm.cmd run seed`, and start `npm.cmd run dev`. No sibling directory or parent package is needed to install or build either repository independently.
 
-## Seeded development account
+## Development account and seed data
 
-- Email: `admin@doctortracker.com`
-- Password: `Admin123!`
+Configure `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in the backend's ignored `.env` before first seeding. Sign in with those values. Deployed reviewer access is shared privately; this README does not publish login credentials.
 
 The backend seed creates 24 fictional doctors and 186 fictional patients. Authentication checks the backend account and uses an HTTP-only session cookie. Refreshing the page restores the session through `GET /api/auth/me`; logout revokes it on the server. Browser demo storage is no longer used or imported. Existing browser demo records are not migrated into MongoDB.
 
@@ -146,13 +161,13 @@ The backend uses Secure cookies in production. The frontend proxies `/api` reque
 
 ## Submission checklist
 
-| Required submission item           | Current status                                                                                     |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Frontend GitHub repository link    | [doctor-tracker-frontend](https://github.com/WorkWithAfridi/doctor-tracker-frontend)               |
-| Backend GitHub repository link     | [doctor-tracker-backend](https://github.com/WorkWithAfridi/doctor-tracker-backend)                 |
-| Live frontend website URL          | [Doctor Tracker](https://doctor-tracker-frontend-ten.vercel.app)                                   |
-| Live backend API URL               | [Production API](https://doctor-tracker-backend-xi.vercel.app/api)                                 |
-| Reviewer credentials               | Local seeded account above; verify the credentials of the deployed demo account before submission. |
-| Desktop and mobile visual evidence | Pending capture; see Visual evidence.                                                              |
+| Required submission item           | Current status                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------ |
+| Frontend GitHub repository link    | [doctor-tracker-frontend](https://github.com/WorkWithAfridi/doctor-tracker-frontend) |
+| Backend GitHub repository link     | [doctor-tracker-backend](https://github.com/WorkWithAfridi/doctor-tracker-backend)   |
+| Live frontend website URL          | [Doctor Tracker](https://doctor-tracker-frontend-ten.vercel.app)                     |
+| Live backend API documentation     | [Swagger UI](https://doctor-tracker-backend-xi.vercel.app/docs/)                     |
+| Reviewer access                    | Shared privately; no login credentials are published here.                           |
+| Desktop and mobile visual evidence | Pending capture; see Visual evidence.                                                |
 
 Both applications are deployed. Production uses `NEXT_PUBLIC_API_URL=https://doctor-tracker-backend-xi.vercel.app/api` and backend `FRONTEND_URL=https://doctor-tracker-frontend-ten.vercel.app`. Before submitting, check login/CRUD/charts on the deployed hosts and attach verified desktop/mobile screenshots.
