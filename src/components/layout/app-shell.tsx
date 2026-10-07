@@ -12,16 +12,20 @@ import {
   X,
   CheckCircle2,
   ChevronRight,
+  Settings,
+  BookOpen,
 } from "lucide-react";
 import { authActions, useAuth } from "@/services/auth-store";
 import { useApi } from "@/hooks/use-api";
 import type { DashboardData } from "@/types/domain";
 import { RequestState } from "@/components/common/request-state";
+import { apiDocsUrl } from "@/lib/api";
 
 const navigation = [
   { href: "/dashboard", title: "Overview", icon: LayoutDashboard },
   { href: "/doctors", title: "Doctors", icon: Stethoscope },
   { href: "/patients", title: "Patients", icon: UsersRound },
+  { href: "/settings", title: "Settings", icon: Settings },
 ];
 export function AppShell({ children }: { children: ReactNode }) {
   const state = useAuth();
@@ -40,7 +44,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     const receive = (event: Event) =>
       setNotice((event as CustomEvent<string>).detail);
     window.addEventListener("workspace-notice", receive);
-    return () => window.removeEventListener("demo-notice", receive);
+    return () => window.removeEventListener("workspace-notice", receive);
   }, []);
   useEffect(() => {
     if (!notice) return;
@@ -100,7 +104,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     ? "Doctors"
     : path.startsWith("/patients")
       ? "Patients"
-      : "Overview";
+      : path.startsWith("/settings")
+        ? "Settings"
+        : "Overview";
   return (
     <div className="app-shell">
       {menuOpen && (
@@ -152,6 +158,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               {title === "Patients" && <PatientCount />}
             </Link>
           ))}
+          <a
+            className="nav-item"
+            href={apiDocsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setMenuOpen(false)}
+          >
+            <BookOpen size={19} />
+            API documentation
+          </a>
         </nav>
         <div className="sidebar-bottom">
           <button

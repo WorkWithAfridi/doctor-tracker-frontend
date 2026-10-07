@@ -2,6 +2,8 @@ const apiUrl = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api"
 ).replace(/\/$/, "");
 const unauthorizedListeners = new Set<() => void>();
+export const apiDocsUrl = apiUrl.replace(/\/api$/, "") + "/docs/";
+export const apiSpecUrl = apiUrl.replace(/\/api$/, "") + "/openapi.json";
 export function onUnauthorized(listener: () => void) {
   unauthorizedListeners.add(listener);
   return () => {

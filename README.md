@@ -30,8 +30,10 @@ The backend seed creates 24 fictional doctors and 186 fictional patients. Authen
 - Database-derived dashboard totals, monthly additions, 30/90-day growth, patient conditions, top doctors, and recent patients.
 - URL-backed list filters, debounced search, loading and retry states, server field errors, and success notifications.
 - Responsive navigation, keyboard focus management, native modal dialogs, and reduced-motion support.
+- Settings with record counts, confirmed workspace reset, and generation of 1,000–2,000 fictional patients per batch (default 1,500).
+- Sidebar API documentation link, plus Swagger and OpenAPI JSON links in Settings, derived from the configured backend URL.
 
-Writes affect the connected MongoDB database and persist across browser sessions. The former browser-only reset control has been removed. Date filters and analytics use UTC; ordinary record timestamps are formatted for display in the browser's timezone. Daily growth counts are grouped into six chart intervals; deleted patients are excluded by the backend.
+Writes affect the connected MongoDB database and persist across browser sessions. Settings reset permanently removes all doctors and patients after typing RESET; administrator accounts, sessions, and indexes are preserved. Population appends to existing records and creates 24 sample doctors when no doctors exist. Both operations require confirmation and refresh visible counts and data. Date filters and analytics use UTC; ordinary record timestamps are formatted for display in the browser's timezone. Daily growth counts are grouped into six chart intervals; deleted patients are excluded by the backend.
 
 ## Environment and API documentation
 

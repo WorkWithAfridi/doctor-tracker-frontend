@@ -1916,3 +1916,57 @@ h1.section-title {
     scroll-behavior: auto !important;
   }
 }
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+.settings-card {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+}
+.settings-card h2,
+.settings-card p {
+  margin: 0;
+}
+.settings-card p,
+.settings-card small {
+  color: var(--muted, #6f7e76);
+  line-height: 1.7;
+}
+.settings-card > .button {
+  margin-top: auto;
+}
+.settings-card .form-field {
+  width: 100%;
+}
+.settings-api {
+  grid-column: 1 / -1;
+}
+.settings-counts {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  color: #6f7e76;
+}
+.settings-counts strong {
+  color: #253e34;
+  font-size: 22px;
+}
+.settings-confirmation {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .settings-card {
+    padding: 22px;
+  }
+}
