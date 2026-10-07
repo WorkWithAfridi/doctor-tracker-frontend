@@ -19,16 +19,16 @@ The assessment specifies a separate Next.js client and standalone Node.js/Expres
 
 ## Assessment requirements and implementation
 
-| Assessment area                     | Frontend implementation                                                                                                                                                              |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Authentication and protected portal | Login page, administrator lookup, session verification before data views render, and sign-out on protected API HTTP 401; the backend enforces access to records.                     |
-| Doctor creation and management      | Name, specialization, hospital, phone, and email form; searchable directory, specialization/hospital/date filters, sorting, pagination, profile editing.                             |
-| Corresponding patients              | Doctor profile with assigned patients; add, edit, reassign, and confirm deletion.                                                                                                    |
-| Dedicated patient page              | Global patient list, name/contact/doctor search, condition/doctor/date filters, sorting, pagination, editing and deletion.                                                           |
-| Dashboard and visualization         | Total doctors/patients, monthly additions, average workload, top-five doctor bars, condition donut, six-interval growth chart over 30/90 days, and recent patients.                  |
-| UI/UX and navigation                | Dashboard/Doctors/Patients navigation, responsive sidebar, scrollable tables, loading/empty/error states, retry actions, debounced search, native dialogs and success notifications. |
-| Performance and maintainability     | Reusable components, server pagination, shared request deduplication, stale-response protection, URL filters and cache invalidation after writes.                                    |
-| Additional testing tools            | Settings for confirmed reset and configurable sample batches; separate API documentation sidebar link.                                                                               |
+| Assessment area                     | Frontend implementation                                                                                                                                                                                                      |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication and protected portal | Empty login fields, administrator/staff session verification before data views render, and sign-out on protected API HTTP 401; the backend enforces role permissions.                                                        |
+| Doctor creation and management      | Name, specialization, hospital, phone, and email form; searchable directory, specialization/hospital/date filters, sorting, pagination, profile editing.                                                                     |
+| Corresponding patients              | Doctor profile with assigned patients; add, edit, reassign, and confirm deletion.                                                                                                                                            |
+| Dedicated patient page              | Global patient list, name/contact/doctor search, condition/doctor/date filters, sorting, pagination, editing and deletion.                                                                                                   |
+| Dashboard and visualization         | Total doctors/patients, monthly additions, average workload, top-five doctor bars, condition donut, six-interval growth chart over 30/90 days, and recent patients.                                                          |
+| UI/UX and navigation                | Dashboard/Doctors/Patients/Profile navigation and administrator-only Settings, responsive sidebar, scrollable tables, loading/empty/error states, retry actions, debounced search, native dialogs and success notifications. |
+| Performance and maintainability     | Reusable components, server pagination, shared request deduplication, stale-response protection, URL filters and cache invalidation after writes.                                                                            |
+| Additional testing tools            | Settings for confirmed reset and configurable sample batches; separate API documentation sidebar link.                                                                                                                       |
 
 No third-party chart library is required by the assessment; charts use accessible SVG roles, descriptions and point titles. Their values come from backend aggregation responses, rather than independently calculated browser totals.
 
@@ -57,7 +57,8 @@ The backend seed creates 24 fictional doctors and 186 fictional patients. Authen
 
 ## Connected flows
 
-- Login, current administrator, logout, and redirect to login after a session expires.
+- Login, current administrator or staff account, logout, and redirect to login after a session expires.
+- Profile with password changes that revoke all sessions; administrator-only staff creation and paginated workspace accounts.
 - Doctor directory and profiles, creation/editing, patient counts, and filter options.
 - Global and doctor-specific patient lists, creation/editing, reassignment, and confirmed deletion.
 - Server search, specialization/hospital/condition/doctor/date filters, name/date sorting, and pagination.
@@ -67,7 +68,7 @@ The backend seed creates 24 fictional doctors and 186 fictional patients. Authen
 - Settings with record counts, confirmed workspace reset, and generation of 1–2,000 doctors and 1,000–2,000 fictional patients per batch (defaults: 100 doctors, 1,500 patients).
 - Sidebar API documentation link derived from the configured backend URL.
 
-Writes affect the connected MongoDB database and persist across browser sessions. Settings reset permanently removes all doctors and patients after typing RESET; administrator accounts, sessions, and indexes are preserved. Each population batch appends both the selected number of doctors and patients to existing records, distributing patients across existing and newly created doctors. Both operations require confirmation and refresh visible counts and data. Date filters and analytics use UTC; ordinary record timestamps are formatted for display in the browser's timezone. Daily growth counts are grouped into six chart intervals; deleted patients are excluded by the backend.
+Writes affect the connected MongoDB database and persist across browser sessions. Settings reset permanently removes all doctors and patients after typing RESET; all user accounts, sessions, and indexes are preserved. Each population batch appends both the selected number of doctors and patients to existing records, distributing patients across existing and newly created doctors. Both operations require confirmation and refresh visible counts and data. Date filters and analytics use UTC; ordinary record timestamps are formatted for display in the browser's timezone. Daily growth counts are grouped into six chart intervals; deleted patients are excluded by the backend.
 
 ## Environment and API documentation
 
@@ -82,7 +83,7 @@ Inspect and try the endpoints at [Swagger UI](http://localhost:5000/docs/) or im
 Browser → independent Next.js frontend → standalone Express REST API → MongoDB.
 
 - `src/lib/api.ts`: credentialed requests, structured API errors, and expired-session notifications.
-- `src/services/auth-store.ts`: server-verified administrator and login/logout state.
+- `src/services/auth-store.ts`: server-verified administrator/staff account and login/logout/password-change state.
 - `src/services/records.ts`: write contracts, URL-to-API query mapping, and paginated doctor assignment options.
 - `src/services/api-cache.ts`: shared request deduplication, retries, invalidation, and stale-request protection.
 - `src/hooks/use-api.ts`: React subscription to API resource state.
@@ -117,11 +118,11 @@ The dashboard consumes server totals, condition counts, top doctor groups and ze
 - `npm.cmd start`: serve the production build.
 - `npm.cmd run format`: format source, tests, and README.
 
-Backend integration tests verify real MongoDB CRUD, authentication, analytics, filters, pagination, and security using their own temporary local database. Frontend tests mock HTTP transport and do not alter the application database. Browser visual verification remains outstanding because the app's browser automation URL policy rejected access to the local preview.
+Backend integration tests verify real MongoDB CRUD, authentication, analytics, filters, pagination, and security using their own temporary local database. Frontend tests mock HTTP transport and do not alter the application database. The deployed login, dashboard, and Profile page have been visually checked. Profile password changes and staff authorization are covered by isolated backend integration tests; production passwords were not changed for verification.
 
 ## Visual evidence
 
-The assessment requires high-quality desktop and mobile screenshots. **Pending: verified screenshots have not yet been captured.** Browser automation access to the local preview was rejected in the implementation environment.
+The assessment requires high-quality desktop and mobile screenshots. **Pending: the complete desktop/mobile submission screenshot set has not yet been added to this repository.** Live deployment checks and a Profile screenshot have been captured during development, but they do not replace the full assessment evidence set below.
 
 | Evidence to capture                   | What it should show                                                | Suggested repository path                                                       |
 | ------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
