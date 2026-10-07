@@ -2,7 +2,7 @@
 
 ## Description
 
-Doctor Tracker is a responsive administrative workspace for doctors, patients, and care analytics. This independent Next.js frontend connects to the standalone Express API; records and login sessions live in MongoDB.
+Doctor Tracker is a responsive care-management workspace for doctors, patients, and analytics. Built with Next.js, it provides secure access, searchable and paginated directories, patient management, and dashboard visualizations. This independent frontend communicates with a standalone Express REST API; MongoDB stores records and login sessions on the backend.
 
 ## Live links
 
@@ -16,156 +16,167 @@ Doctor Tracker is a responsive administrative workspace for doctors, patients, a
 | Frontend repository       | [doctor-tracker-frontend](https://github.com/WorkWithAfridi/doctor-tracker-frontend) |
 | Backend repository        | [doctor-tracker-backend](https://github.com/WorkWithAfridi/doctor-tracker-backend)   |
 
-Login credentials are supplied privately to authorized reviewers and are not included in this documentation.
+Reviewer login credentials are shared privately.
 
 ## Technology stack
 
-| Layer             | Implementation                                                           |
-| ----------------- | ------------------------------------------------------------------------ |
-| Frontend          | Next.js 16 App Router, React 19, TypeScript                              |
-| UI                | Custom CSS, reusable React components, Lucide icons, native SVG charts   |
-| State and data    | React external-store subscriptions, shared API cache, URL-backed filters |
-| Companion backend | Standalone Node.js/Express REST API, TypeScript, Mongoose, MongoDB       |
-| Authentication    | Server-verified administrator or staff session with an HTTP-only cookie  |
-| Tooling           | ESLint, TypeScript, Prettier, Node test runner with tsx                  |
+| Area           | Technology                                                               |
+| -------------- | ------------------------------------------------------------------------ |
+| Framework      | Next.js 16 App Router, React 19, TypeScript                              |
+| Interface      | Custom CSS, reusable React components, Lucide icons                      |
+| Charts         | Accessible SVG charts using backend analytics                            |
+| State and data | React external-store subscriptions, shared API cache, URL-backed filters |
+| Authentication | Server-verified HTTP-only cookie sessions                                |
+| Tooling        | ESLint, Prettier, TypeScript, Node test runner, tsx                      |
+| Deployment     | Vercel                                                                   |
 
-The assessment specifies a separate Next.js client and standalone Node.js/Express server. Each folder has its own package manifest, environment example, README, Git history, and deployment instructions.
+## Features
 
-## Assessment requirements and implementation
-
-| Assessment area                     | Frontend implementation                                                                                                                                                                                                      |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Authentication and protected portal | Empty login fields, administrator/staff session verification before data views render, and sign-out on protected API HTTP 401; the backend enforces role permissions.                                                        |
-| Doctor creation and management      | Name, specialization, hospital, phone, and email form; searchable directory, specialization/hospital/date filters, sorting, pagination, profile editing.                                                                     |
-| Corresponding patients              | Doctor profile with assigned patients; add, edit, reassign, and confirm deletion.                                                                                                                                            |
-| Dedicated patient page              | Global patient list, name/contact/doctor search, condition/doctor/date filters, sorting, pagination, editing and deletion.                                                                                                   |
-| Dashboard and visualization         | Total doctors/patients, monthly additions, average workload, top-five doctor bars, condition donut, six-interval growth chart over 30/90 days, and recent patients.                                                          |
-| UI/UX and navigation                | Dashboard/Doctors/Patients/Profile navigation and administrator-only Settings, responsive sidebar, scrollable tables, loading/empty/error states, retry actions, debounced search, native dialogs and success notifications. |
-| Performance and maintainability     | Reusable components, server pagination, shared request deduplication, stale-response protection, URL filters and cache invalidation after writes.                                                                            |
-| Additional testing tools            | Settings for confirmed reset and configurable sample batches; separate API documentation sidebar link.                                                                                                                       |
-
-No third-party chart library is required by the assessment; charts use accessible SVG roles, descriptions and point titles. Their values come from backend aggregation responses, rather than independently calculated browser totals.
+- Login, protected pages, logout, session restoration, and session-expiry handling.
+- Doctor creation and editing with name, specialization, hospital, phone, and email.
+- Doctor search, specialization/hospital/date filters, sorting, and pagination.
+- Doctor profiles with assigned patients; patient creation, editing, reassignment, and confirmed deletion.
+- Global patient search, condition/doctor/date filters, sorting, and pagination.
+- Dashboard totals, patient growth, condition breakdown, doctor workload, and recent patients.
+- Profile with password changes; administrator-only staff creation and workspace account listing.
+- Administrator-only Settings for sample data generation and confirmed care-record reset.
+- Responsive navigation, keyboard-accessible dialogs, loading/empty/error states, retry actions, and reduced-motion support.
+- A sidebar link to interactive API documentation.
 
 ## Setup guide
 
-1. Install Node.js 24 LTS and npm, and clone this frontend repository.
-2. Start the separately configured backend and MongoDB using the backend README.
-3. From this frontend repository, install dependencies, copy the included [environment example](.env.example), and start the development server:
+### Prerequisites
+
+Install Node.js 24 LTS, npm, and Git. Start the backend and MongoDB by following the [backend local setup guide](https://github.com/WorkWithAfridi/doctor-tracker-backend#local-setup). This frontend installs and builds independently; a running backend is required for login and application data.
+
+### 1. Clone and install
 
 ```powershell
+git clone https://github.com/WorkWithAfridi/doctor-tracker-frontend.git
+cd doctor-tracker-frontend
 npm.cmd ci
 Copy-Item .env.example .env.local
+```
+
+Commands use Windows PowerShell. On macOS/Linux, use `npm` instead of `npm.cmd` and `cp .env.example .env.local` to copy the environment file.
+
+### 2. Configure the API
+
+Set this value in `.env.local` for a backend running locally:
+
+```dotenv
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+```
+
+The backend must allow the frontend origin through `FRONTEND_URL=http://localhost:3000`. Use `localhost` consistently when opening both applications. Restart the frontend after changing environment values.
+
+`NEXT_PUBLIC_API_URL` is the upstream backend URL used by the Next.js rewrite and documentation links. Browser requests use the frontend's own `/api` path, which forwards requests and session cookies to the backend. Database credentials and passwords do not belong in frontend environment variables.
+
+### 3. Start the application
+
+```powershell
 npm.cmd run dev
 ```
 
-4. Open [Doctor Tracker](http://localhost:3000) and sign in with the administrator account configured when seeding your backend.
+Open [Doctor Tracker locally](http://localhost:3000) and sign in with the administrator account configured during backend seeding. Staff accounts can be created by an administrator from Profile. The frontend has no public signup or fallback demo data.
 
-Keep the backend running at http://localhost:5000 with local MongoDB available. In the backend repository, follow its README to configure MongoDB, run `npm.cmd run seed`, and start `npm.cmd run dev`. No sibling directory or parent package is needed to install or build either repository independently.
+### Scripts
 
-## Development account and seed data
-
-Configure `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in the backend's ignored `.env` before first seeding. Sign in with those values. Deployed reviewer access is shared privately; this README does not publish login credentials.
-
-The backend seed creates 24 fictional doctors and 186 fictional patients. Authentication checks the backend account and uses an HTTP-only session cookie. Refreshing the page restores the session through `GET /api/auth/me`; logout revokes it on the server. Browser demo storage is no longer used or imported. Existing browser demo records are not migrated into MongoDB.
-
-## Connected flows
-
-- Login, current administrator or staff account, logout, and redirect to login after a session expires.
-- Profile with password changes that revoke all sessions; administrator-only staff creation and paginated workspace accounts.
-- Doctor directory and profiles, creation/editing, patient counts, and filter options.
-- Global and doctor-specific patient lists, creation/editing, reassignment, and confirmed deletion.
-- Server search, specialization/hospital/condition/doctor/date filters, name/date sorting, and pagination.
-- Database-derived dashboard totals, monthly additions, 30/90-day growth, patient conditions, top doctors, and recent patients.
-- URL-backed list filters, debounced search, loading and retry states, server field errors, and success notifications.
-- Responsive navigation, keyboard focus management, native modal dialogs, and reduced-motion support.
-- Settings with record counts, confirmed workspace reset, and generation of 1–2,000 doctors and 1,000–2,000 fictional patients per batch (defaults: 100 doctors, 1,500 patients).
-- Sidebar API documentation link derived from the configured backend URL.
-
-Writes affect the connected MongoDB database and persist across browser sessions. Settings reset permanently removes all doctors and patients after typing RESET; all user accounts, sessions, and indexes are preserved. Each population batch appends both the selected number of doctors and patients to existing records, distributing patients across existing and newly created doctors. Both operations require confirmation and refresh visible counts and data. Date filters and analytics use UTC; ordinary record timestamps are formatted for display in the browser's timezone. Daily growth counts are grouped into six chart intervals; deleted patients are excluded by the backend.
-
-## Environment and API documentation
-
-Set `NEXT_PUBLIC_API_URL` in `.env.local` to the upstream backend base URL **including /api**. Browser requests always use the frontend's own `/api` path; a Next.js rewrite forwards them to this configured backend and returns its HTTP-only cookie on the frontend origin. This avoids third-party-cookie dependence in private browsing. Swagger links still point directly to the backend. The local value is `http://localhost:5000/api`. This public setting must not contain database credentials or secrets. Restart the frontend after changing it; deployment values are configured before building.
-
-The backend must allow the exact frontend origin via `FRONTEND_URL=http://localhost:3000`. Use localhost consistently when opening the frontend. Requests include cookies and browsers supply the Origin header required for writes. The frontend does not access MongoDB directly.
-
-Inspect and try the endpoints at [Swagger UI](http://localhost:5000/docs/) or import [OpenAPI JSON](http://localhost:5000/openapi.json) into Postman or Bruno.
+| Command                 | Purpose                                   |
+| ----------------------- | ----------------------------------------- |
+| `npm.cmd run dev`       | Start the development server              |
+| `npm.cmd run lint`      | Run ESLint                                |
+| `npm.cmd run typecheck` | Check TypeScript types                    |
+| `npm.cmd test`          | Run frontend API and cache tests          |
+| `npm.cmd run build`     | Create a production build                 |
+| `npm.cmd start`         | Serve the production build after building |
+| `npm.cmd run format`    | Format source, tests, and README          |
 
 ## System architecture
 
-Browser → same-origin Next.js `/api` proxy → standalone Express REST API → MongoDB.
+```text
+Browser -> Next.js frontend /api proxy -> Express REST API -> MongoDB
+```
 
-- `src/lib/api.ts`: credentialed requests, structured API errors, and expired-session notifications.
-- `src/services/auth-store.ts`: server-verified administrator/staff account and login/logout/password-change state.
-- `src/services/records.ts`: write contracts, URL-to-API query mapping, and paginated doctor assignment options.
-- `src/services/api-cache.ts`: shared request deduplication, retries, invalidation, and stale-request protection.
-- `src/hooks/use-api.ts`: React subscription to API resource state.
-- `src/hooks/use-list-filters.ts`: shareable URL filters and pagination.
-- `src/components/`: existing care workspace UI with backend records.
-- `src/types/domain.ts`: frontend entities and API response contracts.
+The protected layout verifies the session before rendering care-management pages. The backend owns authentication, authorization, validation, records, pagination, and analytics. The frontend owns presentation, forms, navigation, and resource subscriptions.
 
-The protected layout waits for session verification before rendering data views. The backend enforces authorization on every protected request. Successful mutations invalidate cached feature resources, refreshing visible lists, profiles, selectors, and dashboard counts. Cache data is cleared on logout/session expiry and is not persisted in browser storage. Returning to a view refreshes its resources.
+Successful writes invalidate cached resources so lists, profiles, selectors, and dashboard counts refresh together. Logout and session expiry clear cached records. Authentication tokens are not stored in browser storage; HTTP-only cookies carry the session. Swagger uses a separate session on the backend origin.
 
-Tables use server pagination rather than downloading all patients. Doctor assignment selectors fetch successive bounded pages so doctors beyond the first 50 remain selectable. There is no client-side fallback to fictional records when the API fails.
+```text
+src/
+  app/          Pages, protected layout, and global styles
+  components/   Layout, forms, tables, charts, dialogs, and feature views
+  hooks/        API subscriptions and URL list filters
+  lib/          API client and shared helpers
+  services/     Authentication, record requests, and resource cache
+  types/        Domain entities and response contracts
+next.config.ts  Same-origin API rewrite and Next.js configuration
+```
 
 ## Technical decisions
 
 ### 1. Shared API resources with React external-store subscriptions
 
-List pages, the sidebar count and forms need to observe consistent data after a write. A shared resource cache keyed by API path deduplicates in-flight requests, while `useSyncExternalStore` subscribes each view to its resource state. Feature components own only UI state such as the open modal; the backend owns records, validation, list results and totals. Authentication is a separate store verified through `/auth/me`.
+A shared cache keyed by API path keeps lists, sidebar counts, and forms consistent after writes. `useSyncExternalStore` subscribes views to resource state, while the cache deduplicates in-flight requests and prevents aborted or superseded responses from replacing newer data. Feature components keep UI state, such as open dialogs, separate from server-owned records.
 
-Each resource exposes loading, error, data and retry state. Successful writes invalidate the cache and reload active resources; logout and session expiry clear cached records without issuing more protected requests. An aborted or superseded request cannot overwrite the newer response. This handles the current portal without introducing Redux or a third-party query client. The tradeoffs are a small custom cache to maintain, broad invalidation after writes and no automatic background polling or offline persistence. A larger application could adopt a query library with cache eviction and more selective invalidation.
+This avoids adding a state-management or query library for the project's current scope. The tradeoffs are maintaining the custom cache, broad invalidation after writes, and no automatic background polling or offline persistence. A larger application could use a query library with selective invalidation and cache eviction.
 
-### 2. URL-backed queries with server-owned pagination and analytics
+### 2. URL-backed queries with server pagination and analytics
 
-Search, filter, sorting and pagination values live in the URL, so navigation and refresh preserve the list being viewed. A 300 ms search debounce limits request churn; the request mapper converts UI keys such as `size`, `sort` and `doctor` into the backend's `limit`, `sortBy/sortOrder` and `doctorId`. Tables render one server page instead of downloading all patients. Shared form/table/modal components keep behavior consistent across global and doctor-specific patient views.
+Search, filters, sorting, and pagination live in the URL, preserving the current view through navigation and refresh. A 300 ms search debounce limits request churn. The request mapper converts UI query keys into API parameters, and tables render one server page instead of downloading every patient.
 
-The dashboard consumes server totals, condition counts, top doctor groups and zero-filled UTC daily counts. Its six chart intervals are presentation grouping of that response, keeping statistics consistent with MongoDB after edits. Doctor selectors are an intentional exception to table pagination: they fetch bounded pages until every doctor is available for assignment. This is suitable for the assessment dataset; at much larger doctor counts, a remote searchable selector would avoid loading the complete directory. Offset pagination is similarly simple for this dataset but would need cursor pagination for larger collections.
+Dashboard charts visualize backend totals, condition counts, workloads, and UTC daily growth. The frontend groups daily counts into six display intervals without independently calculating database totals. Doctor assignment selectors load successive bounded pages so every doctor remains selectable; at larger scales, a remote searchable selector would reduce loading. Offset pagination suits the assessment dataset but would need cursor pagination for larger collections.
 
-## Scripts and verification
+## Authentication and roles
 
-- `npm.cmd run lint`: ESLint.
-- `npm.cmd run typecheck`: TypeScript.
-- `npm.cmd test`: request credentials/errors, session-expiry notification, query mapping, nested writes/reassignment, complete doctor selectors, retries, request deduplication, stale responses, and cache clearing.
-- `npm.cmd run build`: production build.
-- `npm.cmd start`: serve the production build.
-- `npm.cmd run format`: format source, tests, and README.
+Administrators and staff can manage doctors and patients, view analytics, and change their own password. Password changes require the current password and sign the user out on every device. Only administrators can create staff accounts and access Settings; these permissions are also enforced by the backend.
 
-Backend integration tests verify real MongoDB CRUD, authentication, analytics, filters, pagination, and security using their own temporary local database. Frontend tests mock HTTP transport and do not alter the application database. The deployed login, dashboard, and Profile page have been visually checked. Profile password changes and staff authorization are covered by isolated backend integration tests; production passwords were not changed for verification.
+Settings population appends fictional doctors and patients. Reset requires confirmation and removes care records while retaining accounts and sessions. All writes affect the connected database and persist across sessions.
+
+## Testing
+
+Frontend tests mock HTTP transport and cover same-origin requests, cookies, errors, session-expiry notifications, query mapping, nested patient writes, doctor assignment pagination, request deduplication, stale-response protection, retries, and cache clearing. They do not modify the application database. Backend integration tests cover persistence and server-side permissions separately.
+
+## Deployment
+
+Import this repository as a Next.js project on Vercel with root directory `./` and the default Next.js build/output settings. Configure `NEXT_PUBLIC_API_URL=https://doctor-tracker-backend-xi.vercel.app/api` before building, and set the backend's `FRONTEND_URL` to the exact deployed frontend origin.
+
+The frontend proxies API requests through its own origin, allowing first-party HTTP-only session cookies with the separately deployed backend. Production cookies use HTTPS and Secure attributes. The frontend does not connect directly to MongoDB.
 
 ## Visual evidence
 
-The assessment requires high-quality desktop and mobile screenshots. **Pending: the complete desktop/mobile submission screenshot set has not yet been added to this repository.** Live deployment checks and a Profile screenshot have been captured during development, but they do not replace the full assessment evidence set below.
+### Desktop dashboard
 
-| Evidence to capture                   | What it should show                                                | Suggested repository path                                                       |
-| ------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| Desktop dashboard                     | Totals, growth/conditions charts, doctor workload, recent patients | `docs/screenshots/dashboard-desktop.png`                                        |
-| Desktop doctor and patient management | Filters, pagination, doctor profile and assigned patients          | `docs/screenshots/doctors-desktop.png`, `docs/screenshots/patients-desktop.png` |
-| Mobile portal                         | Open navigation, readable dashboard, usable patient table and form | `docs/screenshots/dashboard-mobile.png`, `docs/screenshots/patients-mobile.png` |
+Workspace totals, patient growth and conditions, doctor workload, and recently added patients.
 
-After capturing and reviewing the real UI, add the files to this repository and embed them here. Keep screenshots free of database credentials and session cookies; seeded fictional data is appropriate for submission evidence.
+![Doctor Tracker desktop dashboard](docs/screenshots/dashboard-desktop.png)
 
-## Profile and staff access
+### Desktop doctor management
 
-Open **Profile** in the sidebar to view your account and change your password. Enter your current password and confirm a new password of at least 8 characters. Changing a password signs that user out on every device, so they must sign in again. Login fields are empty and contain no demo credentials.
+Doctor directory with search, specialization/hospital/date filters, patient counts, and editing actions.
 
-Administrators can add staff on the same page and view the paginated workspace user list. Each staff member receives their own email/password login, can manage care records, and can change their password. Staff cannot create accounts or reset/populate the database; Settings is hidden and those APIs enforce administrator access. No public signup or email delivery is provided; administrators share initial credentials with their staff.
+![Doctor Tracker desktop doctor directory](docs/screenshots/doctors-desktop.png)
 
-## Independent deployment
+### Desktop patient management
 
-The frontend is deployed on Vercel at [Doctor Tracker](https://doctor-tracker-frontend-ten.vercel.app). The production API is [hosted separately](https://doctor-tracker-backend-xi.vercel.app/docs/). Import this repository as a separate Next.js project with root directory `./` and the default Next.js output settings. Set `NEXT_PUBLIC_API_URL` to the hosted backend API URL before building and configure the backend's `FRONTEND_URL` with the exact live frontend origin. The build uses only this repository's files.
+Patient overview and directory with search, condition/doctor/date filters, assigned doctors, and editing/deletion actions.
 
-The backend uses Secure cookies in production. The frontend proxies `/api` requests through its own origin, so browser sessions use first-party HTTP-only cookies even though the Express API has a separate deployment. The backend still verifies the original frontend Origin on writes. Swagger uses its own backend-origin session; signing into the portal does not sign into Swagger.
+![Doctor Tracker desktop patient directory](docs/screenshots/patients-desktop.png)
 
-## Submission checklist
+### Mobile dashboard
 
-| Required submission item           | Current status                                                                       |
-| ---------------------------------- | ------------------------------------------------------------------------------------ |
-| Frontend GitHub repository link    | [doctor-tracker-frontend](https://github.com/WorkWithAfridi/doctor-tracker-frontend) |
-| Backend GitHub repository link     | [doctor-tracker-backend](https://github.com/WorkWithAfridi/doctor-tracker-backend)   |
-| Live frontend website URL          | [Doctor Tracker](https://doctor-tracker-frontend-ten.vercel.app)                     |
-| Live backend API documentation     | [Swagger UI](https://doctor-tracker-backend-xi.vercel.app/docs/)                     |
-| Reviewer access                    | Shared privately; no login credentials are published here.                           |
-| Desktop and mobile visual evidence | Pending capture; see Visual evidence.                                                |
+Responsive workspace totals and patient growth chart.
 
-Both applications are deployed. Production uses `NEXT_PUBLIC_API_URL=https://doctor-tracker-backend-xi.vercel.app/api` and backend `FRONTEND_URL=https://doctor-tracker-frontend-ten.vercel.app`. Before submitting, check login/CRUD/charts on the deployed hosts and attach verified desktop/mobile screenshots.
+![Doctor Tracker mobile dashboard](docs/screenshots/dashboard-mobile.png)
+
+### Mobile doctor management
+
+Doctor directory with stacked search and filter controls on a narrow screen.
+
+![Doctor Tracker mobile doctor directory](docs/screenshots/doctors-mobile.png)
+
+### Mobile patient management
+
+Patient summary cards, search and filters, and the patient directory on mobile.
+
+![Doctor Tracker mobile patient directory](docs/screenshots/patients-mobile.png)
