@@ -32,7 +32,7 @@ export interface Admin {
   id: string;
   name: string;
   email: string;
-  role: "admin";
+  role: "admin" | "staff";
 }
 export interface ListResponse<T> {
   data: T[];

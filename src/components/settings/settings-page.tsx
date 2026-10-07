@@ -6,12 +6,24 @@ import { useApi, invalidateRecords } from "@/hooks/use-api";
 import { Modal } from "@/components/common/ui";
 import { RequestState } from "@/components/common/request-state";
 import { notify } from "@/components/common/record-forms";
+import { useAuth } from "@/services/auth-store";
 
 interface Counts {
   doctors: number;
   patients: number;
 }
 export function SettingsPage() {
+  const { user } = useAuth();
+  if (user?.role !== "admin")
+    return (
+      <div className="empty-state">
+        <h1>Administrator access required</h1>
+        <p>Only administrators can manage workspace sample data and resets.</p>
+      </div>
+    );
+  return <SettingsContent />;
+}
+function SettingsContent() {
   const result = useApi<{ data: Counts }>("/settings/data");
   const [count, setCount] = useState(1500);
   const [doctorCount, setDoctorCount] = useState(100);

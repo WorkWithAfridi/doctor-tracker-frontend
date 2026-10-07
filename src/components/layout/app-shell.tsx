@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Settings,
   BookOpen,
+  UserRound,
 } from "lucide-react";
 import { authActions, useAuth } from "@/services/auth-store";
 import { useApi } from "@/hooks/use-api";
@@ -25,6 +26,7 @@ const navigation = [
   { href: "/dashboard", title: "Overview", icon: LayoutDashboard },
   { href: "/doctors", title: "Doctors", icon: Stethoscope },
   { href: "/patients", title: "Patients", icon: UsersRound },
+  { href: "/profile", title: "Profile", icon: UserRound },
   { href: "/settings", title: "Settings", icon: Settings },
 ];
 export function AppShell({ children }: { children: ReactNode }) {
@@ -106,7 +108,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       ? "Patients"
       : path.startsWith("/settings")
         ? "Settings"
-        : "Overview";
+        : path.startsWith("/profile")
+          ? "Profile"
+          : "Overview";
   return (
     <div className="app-shell">
       {menuOpen && (
@@ -145,19 +149,24 @@ export function AppShell({ children }: { children: ReactNode }) {
         </button>
         <div className="workspace-label">WORKSPACE</div>
         <nav aria-label="Main navigation">
-          {navigation.map(({ href, title, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`nav-item ${path.startsWith(href) ? "active" : ""}`}
-              aria-current={path.startsWith(href) ? "page" : undefined}
-              onClick={() => setMenuOpen(false)}
-            >
-              <Icon size={19} />
-              {title}
-              {title === "Patients" && <PatientCount />}
-            </Link>
-          ))}
+          {navigation
+            .filter(
+              (item) =>
+                item.href !== "/settings" || state.user?.role === "admin",
+            )
+            .map(({ href, title, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`nav-item ${path.startsWith(href) ? "active" : ""}`}
+                aria-current={path.startsWith(href) ? "page" : undefined}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Icon size={19} />
+                {title}
+                {title === "Patients" && <PatientCount />}
+              </Link>
+            ))}
           <a
             className="nav-item"
             href={apiDocsUrl}
@@ -206,7 +215,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
             <div>
               {state.user?.name}
-              <small>Administrator</small>
+              <small>
+                {state.user?.role === "admin" ? "Administrator" : "Staff"}
+              </small>
             </div>
             <span className="online-dot" />
           </div>

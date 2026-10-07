@@ -1921,6 +1921,56 @@ h1.section-title {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
 }
+.profile-grid {
+  margin-bottom: 32px;
+}
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+.profile-details {
+  margin: 0;
+  width: 100%;
+}
+.profile-details dt {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 14px;
+}
+.profile-details dd {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+}
+.profile-success {
+  color: var(--green);
+}
+.profile-user-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+.profile-user-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.profile-user-list span {
+  font-size: 13px;
+  color: var(--muted);
+}
+.profile-pagination {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: auto;
+}
 .settings-card {
   padding: 28px;
   display: flex;

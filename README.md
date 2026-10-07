@@ -12,7 +12,7 @@ Doctor Tracker is a responsive administrative workspace for doctors, patients, a
 | UI                | Custom CSS, reusable React components, Lucide icons, native SVG charts   |
 | State and data    | React external-store subscriptions, shared API cache, URL-backed filters |
 | Companion backend | Standalone Node.js/Express REST API, TypeScript, Mongoose, MongoDB       |
-| Authentication    | Server-verified administrator session with an HTTP-only cookie           |
+| Authentication    | Server-verified administrator or staff session with an HTTP-only cookie  |
 | Tooling           | ESLint, TypeScript, Prettier, Node test runner with tsx                  |
 
 The assessment specifies a separate Next.js client and standalone Node.js/Express server. Each folder has its own package manifest, environment example, README, Git history, and deployment instructions.
@@ -130,6 +130,12 @@ The assessment requires high-quality desktop and mobile screenshots. **Pending: 
 | Mobile portal                         | Open navigation, readable dashboard, usable patient table and form | `docs/screenshots/dashboard-mobile.png`, `docs/screenshots/patients-mobile.png` |
 
 After capturing and reviewing the real UI, add the files to this repository and embed them here. Keep screenshots free of database credentials and session cookies; seeded fictional data is appropriate for submission evidence.
+
+## Profile and staff access
+
+Open **Profile** in the sidebar to view your account and change your password. Enter your current password and confirm a new password of at least 8 characters. Changing a password signs that user out on every device, so they must sign in again. Login fields are empty and contain no demo credentials.
+
+Administrators can add staff on the same page and view the paginated workspace user list. Each staff member receives their own email/password login, can manage care records, and can change their password. Staff cannot create accounts or reset/populate the database; Settings is hidden and those APIs enforce administrator access. No public signup or email delivery is provided; administrators share initial credentials with their staff.
 
 ## Independent deployment
 

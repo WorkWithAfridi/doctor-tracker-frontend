@@ -69,6 +69,13 @@ export function useAuth() {
   return { ...snapshot, authenticated: !!snapshot.user, retry: checkSession };
 }
 export const authActions = {
+  async changePassword(currentPassword: string, newPassword: string) {
+    await apiRequest<void>("/auth/password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    signedOut();
+  },
   async login(email: string, password: string) {
     const { data } = await apiRequest<{ data: Admin }>("/auth/login", {
       method: "POST",
