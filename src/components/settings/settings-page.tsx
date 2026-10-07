@@ -14,6 +14,7 @@ interface Counts {
 export function SettingsPage() {
   const result = useApi<{ data: Counts }>("/settings/data");
   const [count, setCount] = useState(1500);
+  const [doctorCount, setDoctorCount] = useState(100);
   const [operation, setOperation] = useState<"reset" | "populate" | null>(null);
   const [confirmation, setConfirmation] = useState("");
   const [pending, setPending] = useState(false);
@@ -35,18 +36,20 @@ export function SettingsPage() {
     setError("");
     try {
       const response = await apiRequest<{
-        data: Counts & { patientsAdded?: number };
+        data: Counts & { patientsAdded?: number; doctorsAdded?: number };
       }>(`/settings/${operation}`, {
         method: "POST",
         body: JSON.stringify(
-          operation === "reset" ? { confirmation } : { patientCount: count },
+          operation === "reset"
+            ? { confirmation }
+            : { patientCount: count, doctorCount },
         ),
       });
       invalidateRecords();
       notify(
         operation === "reset"
           ? "All doctor and patient records removed"
-          : `${response.data.patientsAdded} sample patients added successfully`,
+          : `${response.data.doctorsAdded} doctors and ${response.data.patientsAdded} patients added successfully`,
       );
       setOperation(null);
     } catch (error) {
@@ -89,9 +92,20 @@ export function SettingsPage() {
           </span>
           <h2>Populate sample data</h2>
           <p>
-            Add fictional patients to the database for exploring search,
-            pagination, and charts. Existing records are preserved.
+            Add fictional doctors and patients to the database for exploring
+            search, pagination, and charts. Existing records are preserved.
           </p>
+          <label className="form-field">
+            Number of doctors
+            <input
+              type="number"
+              min={1}
+              max={2000}
+              step={1}
+              value={doctorCount}
+              onChange={(event) => setDoctorCount(Number(event.target.value))}
+            />
+          </label>
           <label className="form-field">
             Number of patients
             <input
@@ -104,8 +118,8 @@ export function SettingsPage() {
             />
           </label>
           <small>
-            Choose 1,000–2,000 patients. If there are no doctors, 24 sample
-            doctors will also be created.
+            Choose 1–2,000 doctors and 1,000–2,000 patients. Every batch adds
+            both; patients are assigned across your existing and new doctors.
           </small>
           <button
             className="button primary"
@@ -115,7 +129,10 @@ export function SettingsPage() {
               !!result.error ||
               !Number.isInteger(count) ||
               count < 1000 ||
-              count > 2000
+              count > 2000 ||
+              !Number.isInteger(doctorCount) ||
+              doctorCount < 1 ||
+              doctorCount > 2000
             }
             onClick={() => open("populate")}
           >
@@ -184,7 +201,7 @@ export function SettingsPage() {
           description={
             operation === "reset"
               ? "This permanently deletes all doctors and patients. It cannot be undone."
-              : `Add ${count.toLocaleString()} fictional patients while preserving your existing records.`
+              : `Add ${doctorCount.toLocaleString()} fictional doctors and ${count.toLocaleString()} patients while preserving your existing records.`
           }
           onClose={() => {
             if (!pending) setOperation(null);
@@ -228,7 +245,7 @@ export function SettingsPage() {
                     ? "Working…"
                     : operation === "reset"
                       ? "Delete all records"
-                      : `Add ${count.toLocaleString()} patients`}
+                      : `Add ${doctorCount.toLocaleString()} doctors & ${count.toLocaleString()} patients`}
                 </button>
               </div>
             </fieldset>
